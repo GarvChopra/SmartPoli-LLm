@@ -1,0 +1,30 @@
+[project]
+name = "r2"
+version = "0.3.0"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "mss>=9",
+    "pillow>=10",
+    "pyautogui>=0.9.54",
+    "pywinauto>=0.6.8",
+    "playwright>=1.44",
+    "qrcode>=7.4",
+    "pystray>=0.19",
+    "pyttsx3>=2.90",
+]
+
+[project.scripts]
+r2 = "r2.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+voice = ["faster-whisper>=1.0", "openwakeword>=0.6", "sounddevice>=0.4", "numpy"]
+
+[tool.setuptools.packages.find]
+include = ["r2*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

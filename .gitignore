@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+*.db
+.pytest_cache/
+*.egg-info/
+data/
+.baseline.log
+egain/out-of-scope/

@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115">
+  <title>SmartPoli Care Navigator — Support Bot</title>
+  <style>
+    :root {
+      --bg: #0f1115; --card: #181b22; --card-alt: #13161c; --line: #2a2f3a;
+      --text: #e8eaf0; --muted: #9aa3b5;
+      --accent: #0d9488; --accent-hover: #0f766e; --accent-soft: rgba(13, 148, 136, 0.14);
+      --danger: #e5484d; --danger-soft: rgba(229, 72, 77, 0.14);
+      --warn: #f5a524; --warn-soft: rgba(245, 165, 36, 0.14);
+      --ok: #30a46c;
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f4f7f8; --card: #ffffff; --card-alt: #f8fafb; --line: #dde3ea;
+        --text: #15181f; --muted: #5b6475;
+        --accent: #0d9488; --accent-hover: #0f766e; --accent-soft: rgba(13, 148, 136, 0.10);
+      }
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; background: var(--bg); color: var(--text);
+      font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      padding: 16px max(16px, env(safe-area-inset-right)) 32px max(16px, env(safe-area-inset-left));
+    }
+    main { max-width: 680px; margin: 0 auto; display: grid; gap: 14px; }
+    header {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+      padding: 4px 2px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-badge {
+      width: 36px; height: 36px; border-radius: 10px; background: var(--accent);
+      color: #fff; font-weight: 700; display: grid; place-items: center;
+      font-size: 1rem; letter-spacing: .02em; flex: none;
+    }
+    h1 { margin: 0; font-size: 1.35rem; letter-spacing: .01em; }
+    h2 { margin: 0 0 8px; font-size: 1.02rem; }
+    .subtitle { margin: 0; font-size: .82rem; color: var(--muted); }
+    .chip {
+      padding: 4px 11px; border-radius: 99px; background: var(--card);
+      border: 1px solid var(--line); color: var(--muted); font-size: .8rem;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      transition: all .18s ease;
+    }
+    .chip::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ok);
+    }
+    .chip.busy { color: var(--accent); border-color: var(--accent); }
+    .chip.busy::before { background: var(--accent); animation: pulse 1s infinite ease-in-out; }
+    .chip.emergency { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+    .chip.emergency::before { background: var(--danger); }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .card {
+      background: var(--card); border: 1px solid var(--line);
+      border-radius: 14px; padding: 16px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+    }
+    .banner {
+      font-size: .84rem; color: var(--muted); background: var(--card-alt);
+      border: 1px solid var(--line); border-left: 3px solid var(--accent);
+      border-radius: 12px; padding: 10px 14px;
+    }
+    .muted { color: var(--muted); margin: 4px 0; font-size: .9rem; }
+    .error {
+      color: var(--danger); font-size: .88rem; min-height: 1.25em; margin: 6px 0 0;
+    }
+    label { display: block; font-size: .86rem; font-weight: 600; margin: 10px 0 5px; }
+    input, select, textarea {
+      width: 100%; min-height: 44px; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--bg); color: var(--text);
+      font: inherit; transition: border-color .15s ease;
+    }
+    input:focus, select:focus, textarea:focus, button:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 1px; border-color: var(--accent);
+    }
+    button {
+      min-height: 44px; padding: 0 16px; border-radius: 10px;
+      border: 1px solid var(--line); background: var(--card); color: var(--text);
+      font: inherit; font-weight: 500; cursor: pointer;
+      transition: background .15s ease, border-color .15s ease, transform .08s ease;
+    }
+    button:hover:not(:disabled) { border-color: var(--accent); }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    button.primary {
+      background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
+    }
+    button.primary:hover:not(:disabled) { background: var(--accent-hover); }
+    button.pill {
+      min-height: 36px; padding: 0 13px; border-radius: 99px; font-size: .86rem;
+      background: var(--accent-soft); border-color: rgba(13, 148, 136, 0.35);
+    }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+    .row { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+    .row.between { justify-content: space-between; align-items: center; margin-top: 0; }
+    #log {
+      height: 390px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+      padding: 6px 2px 10px; scroll-behavior: smooth;
+    }
+    .msg {
+      max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: .94rem;
+      line-height: 1.45; word-break: break-word; animation: fadeSlide .18s ease-out;
+    }
+    .msg.bot {
+      align-self: flex-start; background: var(--card-alt); border: 1px solid var(--line);
+      border-bottom-left-radius: 4px;
+    }
+    .msg.user {
+      align-self: flex-end; background: var(--accent); color: #fff;
+      border-bottom-right-radius: 4px;
+    }
+    .msg.emergency {
+      align-self: stretch; max-width: 100%; background: var(--danger-soft);
+      border: 1px solid var(--danger); color: var(--text); font-weight: 500;
+    }
+    .msg.ticket {
+      border-left: 3px solid var(--accent);
+    }
+    .quick-bar {
+      display: flex; gap: 6px; flex-wrap: wrap; padding: 8px 0 4px;
+      border-top: 1px solid var(--line); margin-top: 4px;
+    }
+    .composer { display: flex; gap: 8px; margin-top: 8px; }
+    .composer input { flex: 1; }
+    [hidden] { display: none !important; }
+    @media (max-width: 520px) {
+      body { padding: 12px 12px 24px; }
+      #log { height: 52vh; }
+      .msg { max-width: 92%; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div class="brand">
+        <div class="brand-badge" aria-hidden="true">SP</div>
+        <div>
+          <h1>SmartPoli Care Navigator</h1>
+          <p class="subtitle">Medication-Reminder Customer Support (Simulated Demo)</p>
+        </div>
+      </div>
+      <span id="statusChip" class="chip" aria-live="polite">ready</span>
+    </header>
+
+    <div class="banner" role="note">
+      <strong>Simulated Hackathon Experience:</strong> SmartPoli assists with medication reminders and support tickets. It never gives medical advice or places prescription orders. For emergencies, call <strong>911</strong>.
+    </div>
+
+    <!-- Step 1: Pre-Chat Workflow Card -->
+    <section id="preChatCard" class="card" aria-labelledby="preChatHeading">
+      <h2 id="preChatHeading">Before we start</h2>
+      <p class="muted">Tell us how we can help so we can connect you to the right workflow.</p>
+      <form id="preForm" novalidate>
+        <label for="firstName">First name <span class="muted">(optional)</span></label>
+        <input id="firstName" name="first_name" maxlength="40" autocomplete="given-name" placeholder="e.g., Sam">
+
+        <label for="category">What do you need help with? <span aria-hidden="true">*</span></label>
+        <select id="category" name="category" required>
+          <option value="">Select a topic...</option>
+          <option value="reminder_issue">Missing or late medication reminders</option>
+          <option value="missed_dose_logging">Logging a missed dose</option>
+          <option value="account_help">Account setup or support hours</option>
+          <option value="other">Other question</option>
+        </select>
+
+        <p id="preErr" class="error" role="alert"></p>
+        <div class="row">
+          <button id="startBtn" type="submit" class="primary">Start support chat</button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Step 2: Active Support Chat Card -->
+    <section id="chatCard" class="card" aria-label="Support conversation" hidden>
+      <div class="row between" style="margin-bottom:8px;">
+        <span id="contextTag" class="muted"></span>
+        <button id="resetBtn" type="button" class="pill">New session</button>
+      </div>
+      <p id="aiBanner" class="banner" hidden></p>
+
+      <div id="log" role="log" aria-live="polite"></div>
+
+      <div id="quickBar" class="quick-bar" aria-label="Suggested responses"></div>
+
+      <form id="chatForm" class="composer" novalidate>
+        <input id="msgInput" placeholder="Ask a question or reply..." maxlength="500" autocomplete="off" aria-label="Message">
+        <button id="sendBtn" type="submit" class="primary">Send</button>
+      </form>
+      <p id="chatErr" class="error" role="alert"></p>
+    </section>
+  </main>
+
+  <script>
+    let sessionId = "";
+    const preCard = document.getElementById("preChatCard");
+    const chatCard = document.getElementById("chatCard");
+    const preForm = document.getElementById("preForm");
+    const firstName = document.getElementById("firstName");
+    const category = document.getElementById("category");
+    const preErr = document.getElementById("preErr");
+    const logEl = document.getElementById("log");
+    const quickBar = document.getElementById("quickBar");
+    const chatForm = document.getElementById("chatForm");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const chatErr = document.getElementById("chatErr");
+    const statusChip = document.getElementById("statusChip");
+    const contextTag = document.getElementById("contextTag");
+    const resetBtn = document.getElementById("resetBtn");
+
+    function setChip(text, cls) {
+      statusChip.textContent = text;
+      statusChip.className = "chip" + (cls ? " " + cls : "");
+    }
+
+    function appendMessage(text, role, extraClass) {
+      const div = document.createElement("div");
+      div.className = "msg " + role + (extraClass ? " " + extraClass : "");
+      div.textContent = text;
+      logEl.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function renderChips(chips) {
+      quickBar.innerHTML = "";
+      (chips || []).forEach(label => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pill";
+        b.textContent = label;
+        b.onclick = () => sendMessage(label);
+        quickBar.appendChild(b);
+      });
+    }
+
+    async function postJSON(url, payload) {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Request failed");
+      return data;
+    }
+
+    preForm.onsubmit = async (e) => {
+      e.preventDefault();
+      preErr.textContent = "";
+      if (!category.value) {
+        preErr.textContent = "Please choose what you need help with before starting.";
+        category.focus();
+        return;
+      }
+      setChip("connecting", "busy");
+      try {
+        const r = await postJSON("/chat/start", {
+          first_name: firstName.value.trim(),
+          category: category.value
+        });
+        sessionId = r.session;
+        preCard.hidden = true;
+        chatCard.hidden = false;
+        logEl.innerHTML = "";
+        contextTag.textContent = "Topic: " + category.options[category.selectedIndex].text + (r.ai_connected ? " · Groq AI (" + r.model + ")" : " · Offline KB mode");
+        const aiBanner = document.getElementById("aiBanner");
+        if (!r.ai_connected) {
+          aiBanner.hidden = false;
+          aiBanner.innerHTML = "<strong>Groq AI key not set:</strong> Add <code>GROQ_API_KEY=gsk_...</code> in <code>.env</code> and restart <code>r2 care</code> to enable live Groq LLM responses.";
+        } else {
+          aiBanner.hidden = true;
+        }
+        appendMessage(r.reply, "bot");
+        renderChips(r.chips);
+        setChip("ready", "");
+        msgInput.focus();
+      } catch (err) {
+        preErr.textContent = err.message;
+        setChip("ready", "");
+      }
+    };
+
+    async function sendMessage(text) {
+      const t = (text || "").trim();
+      if (!t || !sessionId) return;
+      chatErr.textContent = "";
+      msgInput.value = "";
+      appendMessage(t, "user");
+      sendBtn.disabled = true;
+      setChip("thinking", "busy");
+      try {
+        const r = await postJSON("/chat", {session: sessionId, message: t});
+        const extra = r.emergency ? "emergency" : (r.reference ? "ticket" : "");
+        appendMessage(r.reply, "bot", extra);
+        renderChips(r.chips);
+        setChip(r.emergency ? "emergency stop" : "ready", r.emergency ? "emergency" : "");
+      } catch (err) {
+        chatErr.textContent = err.message;
+        setChip("ready", "");
+      } finally {
+        sendBtn.disabled = false;
+        msgInput.focus();
+      }
+    }
+
+    chatForm.onsubmit = (e) => {
+      e.preventDefault();
+      sendMessage(msgInput.value);
+    };
+
+    resetBtn.onclick = () => {
+      sessionId = "";
+      chatCard.hidden = true;
+      preCard.hidden = false;
+      preErr.textContent = "";
+      chatErr.textContent = "";
+      setChip("ready", "");
+      category.focus();
+    };
+  </script>
+</body>
+</html>

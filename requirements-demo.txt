@@ -1,0 +1,5 @@
+# The hosted demo only needs the server. The desktop-control libraries (pyautogui, pywinauto, mss,
+# pystray, playwright, pyttsx3) are Windows-only and are never loaded when R2_PROFILE=demo.
+httpx>=0.27
+fastapi>=0.110
+uvicorn>=0.29

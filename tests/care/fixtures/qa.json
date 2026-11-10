@@ -1,0 +1,26 @@
+{
+  "answerable": [
+    {"q": "How many reminders can I get each day?", "fact": "6 reminders per day"},
+    {"q": "Can SmartPoli order my prescription refill?", "fact": "does not place prescription orders"},
+    {"q": "What are your support hours?", "fact": "8 AM to 6 PM Pacific"},
+    {"q": "What should I check if my reminders are not arriving?", "fact": "notifications are allowed"},
+    {"q": "How do I log a missed dose?", "fact": "Log missed dose"},
+    {"q": "What information does SmartPoli collect?", "fact": "member ID, medication names"},
+    {"q": "How can I contact a human?", "fact": "support request"},
+    {"q": "Does SmartPoli give medical advice about doses?", "fact": "does not"},
+    {"q": "What is the poison control number?", "fact": "1-800-222-1222"},
+    {"q": "How long does onboarding setup take?", "fact": "10 minutes"},
+    {"q": "Can I edit a missed dose log later?", "fact": "24 hours"},
+    {"q": "How late can a reminder arrive?", "fact": "5 minutes late"},
+    {"q": "Is the patient data in this demo real?", "fact": "synthetic"}
+  ],
+  "unsupported": [
+    "How much does the premium plan cost?",
+    "Does SmartPoli work with my Apple Watch?",
+    "Which pharmacies are in your network?",
+    "What is the weather in Seattle tomorrow?",
+    "Does SmartPoli integrate with Epic electronic health records?",
+    "Can you translate the app into Spanish for me?",
+    "Can my daughter see my refill status as a caregiver?"
+  ]
+}

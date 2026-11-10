@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0f1115">
+  <title>R2</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <main id="pair" class="card narrow" hidden>
+    <h1>R2</h1>
+    <p class="muted">Enter the pairing code shown by <code>r2 pair</code> on your PC.</p>
+    <input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="16" placeholder="PAIRING CODE">
+    <button id="pairBtn" class="primary">Pair this device</button>
+    <p id="pairErr" class="error"></p>
+  </main>
+
+  <main id="app" hidden>
+    <header>
+      <h1>R2</h1>
+      <span id="chip" class="chip">idle</span>
+    </header>
+
+    <p id="demoNote" class="card warn muted" hidden>Public demo: memory, projects and tasks are shared by everyone who uses it, and
+      reset when the demo restarts. Please do not enter personal information.</p>
+
+    <section id="approval" class="card warn" hidden>
+      <h2>Approval needed</h2>
+      <p>R2 wants to run <b id="apTool"></b></p>
+      <pre id="apArgs"></pre>
+      <p class="muted" id="apTimer"></p>
+      <div class="row">
+        <button id="apYes" class="primary">Approve</button>
+        <button id="apNo">Deny</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <textarea id="msg" rows="3" maxlength="4000" placeholder="What should R2 do?"></textarea>
+      <div class="row">
+        <button id="send" class="primary">Send</button>
+        <button id="stop" class="danger" hidden>Stop</button>
+      </div>
+      <p id="err" class="error"></p>
+    </section>
+
+    <section id="resultCard" class="card" hidden>
+      <h2>Last task</h2>
+      <p id="resMsg" class="muted"></p>
+      <p id="resStatus" class="muted"></p>
+      <pre id="resAnswer"></pre>
+    </section>
+
+    <section class="card">
+      <div class="row between">
+        <h2>Screen</h2>
+        <button id="shot">Refresh</button>
+      </div>
+      <img id="shotImg" alt="" hidden>
+    </section>
+
+    <section class="card" id="meetingsCard">
+      <h2>Meetings</h2>
+      <p class="muted">Paste what was said (English or Hinglish). R2 writes the minutes and lists who must do what, by when.</p>
+      <div class="row">
+        <select id="projSelect" aria-label="Project"></select>
+        <button id="projNew">New project</button>
+      </div>
+      <div id="projForm" hidden>
+        <input id="projName" maxlength="80" placeholder="Project name">
+        <input id="projMembers" placeholder="Team, comma separated: Aman, Riya, Karan">
+        <div class="row"><button id="projCreate" class="primary">Create project</button></div>
+        <p id="projErr" class="error"></p>
+      </div>
+      <textarea id="trText" rows="6" placeholder="Meeting transcript: 'Garv: Aman, please finish the login page by Friday...'"></textarea>
+      <div class="row">
+        <input id="trTitle" maxlength="100" placeholder="Title (optional)">
+        <input id="trMe" maxlength="60" placeholder="Your name, for 'I will...'">
+        <input id="trDate" type="date" aria-label="Meeting date">
+      </div>
+      <div class="row"><button id="trGo" class="primary">Summarize and save</button></div>
+      <p id="trErr" class="error"></p>
+      <div id="trResult" hidden>
+        <h2>Summary</h2>
+        <p id="trSummary"></p>
+        <p class="muted" id="trMethod"></p>
+        <ul id="trDecisions" class="list small"></ul>
+        <ul id="trQuestions" class="list small"></ul>
+      </div>
+      <h2>Tasks</h2>
+      <ul id="taskList" class="list"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Privacy ledger</h2>
+      <p class="muted" id="ledgerSummary">Nothing has been sent to a hosted model yet.</p>
+      <ul id="ledgerRows" class="list small"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Skills</h2>
+      <ul id="skillsList" class="list small"></ul>
+      <h2 id="proposedTitle" hidden>R2 suggests these skills</h2>
+      <ul id="proposedList" class="list"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Memory</h2>
+      <ul id="facts" class="list"></ul>
+      <h2>Recent actions</h2>
+      <ul id="actions" class="list small"></ul>
+    </section>
+
+    <footer>
+      <button id="signout">Sign out this device</button>
+      <button id="revoke" class="danger">Revoke all devices</button>
+    </footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>

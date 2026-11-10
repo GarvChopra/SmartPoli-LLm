@@ -1,0 +1,37 @@
+# OpenShell sandbox policy for R2 (the Linux / demo build).
+# Default-deny: the sandbox can reach only the two hosted services R2 is configured to use, and only
+# from the Python interpreter. Anything else is blocked and shown to the operator for approval.
+#
+# Schema: https://docs.nvidia.com/openshell/how-it-works/policies/schema.md
+# STATUS: written against that schema; not yet run on a live OpenShell gateway (see README, Honest limits).
+version: 1
+
+filesystem_policy:
+  include_workdir: true
+  read_only: [/usr, /lib, /etc, /app]
+  read_write: [/tmp, /data]
+
+landlock:
+  compatibility: best_effort
+
+process:
+  run_as_user: sandbox
+  run_as_group: sandbox
+
+network_policies:
+  nebius_token_factory:
+    endpoints:
+      - host: api.tokenfactory.nebius.com
+        port: 443
+        protocol: tcp
+        enforcement: enforce
+    binaries:
+      - path: /usr/local/bin/python
+  tavily_search:
+    endpoints:
+      - host: api.tavily.com
+        port: 443
+        protocol: tcp
+        enforcement: enforce
+    binaries:
+      - path: /usr/local/bin/python

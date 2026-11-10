@@ -1,0 +1,9 @@
+{
+  "base_url_env": "SMARTPOLI_ACTIONS_URL",
+  "auth": {"header": "X-API-Key", "secret_env": "SMARTPOLI_API_KEY"},
+  "actions": {
+    "create_ticket": {"method": "POST", "path": "/actions/create_ticket", "body": ["category", "summary", "idempotency_key"], "returns": ["reference", "message", "handoff_summary", "duplicate"]},
+    "request_callback": {"method": "POST", "path": "/actions/request_callback", "body": ["window", "demo_phone"], "returns": ["reference", "message"]},
+    "safety_check": {"method": "POST", "path": "/safety/check", "body": ["text"], "returns": ["emergency", "prompt_injection", "message"]}
+  }
+}

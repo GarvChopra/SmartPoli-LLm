@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Penny - Maple Credit Union (demo)</title>
+<style>
+body{font-family:system-ui;max-width:520px;margin:2rem auto;padding:0 1rem}
+#log{border:1px solid #ccc;border-radius:8px;height:380px;overflow:auto;padding:.5rem}
+.u{text-align:right;color:#0a58ca}.b{margin:.4rem 0}input,select,button{padding:.5rem;margin:.2rem 0}
+form input,form select{width:100%;box-sizing:border-box}
+</style>
+<h2>Penny <small>Maple Credit Union (fictional demo)</small></h2>
+<form id="pre">
+ <input id="name" placeholder="Your name" required>
+ <select id="topic"><option value="lost_card">Lost/stolen card</option><option value="dispute">Dispute a charge</option>
+ <option value="fees">Fees question</option><option value="other">Other</option></select>
+ <label><input type="checkbox" id="urgent" style="width:auto"> Urgent / suspected fraud</label>
+ <button>Start chat</button>
+</form>
+<div id="chat" hidden><div id="log"></div>
+<form id="f"><input id="m" placeholder="Type a message" autocomplete="off"></form>
+<p><small>Demo only: use fictional data. Demo cards end in 4242 or 1111. Never enter a PIN or full card number.</small></p></div>
+<script>
+let sid="";const log=document.getElementById("log");
+const add=(t,c)=>{const d=document.createElement("div");d.className="b "+c;d.textContent=t;log.append(d);log.scrollTop=1e9};
+const post=(u,b)=>fetch(u,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(b)}).then(r=>r.json());
+pre.onsubmit=async e=>{e.preventDefault();
+ const r=await post("/chat/start",{name:name.value,topic:topic.value,urgent:urgent.checked});
+ sid=r.session;pre.hidden=true;chat.hidden=false;add(r.reply,"b")};
+f.onsubmit=async e=>{e.preventDefault();const t=m.value.trim();if(!t)return;m.value="";add(t,"u");
+ const r=await post("/chat",{session:sid,message:t});add(r.reply,"b")};
+</script>

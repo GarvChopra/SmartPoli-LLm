@@ -418,6 +418,7 @@ def main(argv: list[str] | None = None) -> int:
     tsk.add_argument("--all", action="store_true", help="include finished tasks")
     sub.add_parser("ledger", help="show everything R2 sent to a hosted model, and what was masked first")
     sub.add_parser("care", help="run the SmartPoli sandbox actions service for the eGain hackathon")
+    sub.add_parser("companion", help="run the floating SmartPoli Care Companion desktop assistant")
     sub.add_parser("support", help="run the Penny support-actions backend for the eGain hackathon")
     sub.add_parser("serve", help="run the server in this terminal (no tray icon)")
     sub.add_parser("daemon", help="run the background assistant with a tray icon")
@@ -459,6 +460,10 @@ def main(argv: list[str] | None = None) -> int:
         from r2 import care_actions
 
         return care_actions.main()
+    if args.command == "companion":
+        from r2.care_companion import launch_desktop_companion
+
+        return launch_desktop_companion()
     if args.command == "support":
         from r2 import support
 

@@ -13,3 +13,8 @@ def client():
 @pytest.fixture()
 def H():
     return {"X-API-Key": KEY}
+
+
+@pytest.fixture()
+def UI(client):
+    return {"X-Care-Token": client.app.state.ui_token}

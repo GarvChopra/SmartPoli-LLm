@@ -398,10 +398,20 @@ class OpenAIBrain:
             finally:
                 done.set()
 
-        threading.Thread(target=worker, name="r2-cloud-request", daemon=True).start()
-        while not done.wait(0.1):
-            if should_stop and should_stop():
-                raise Cancelled()  # the request is abandoned; the thread finishes on its own
+        if should_stop is None:
+            try:
+                box["resp"] = self._client.post(
+                    f"{self._base}/chat/completions",
+                    json=payload,
+                    headers={"Authorization": f"Bearer {self._key}"},
+                )
+            except Exception as exc:
+                box["error"] = exc
+        else:
+            threading.Thread(target=worker, name="r2-cloud-request", daemon=True).start()
+            while not done.wait(0.04):
+                if should_stop():
+                    raise Cancelled()  # the request is abandoned; the thread finishes on its own
         sent = len(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
         if "error" in box:
             exc = box["error"]

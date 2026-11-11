@@ -1,138 +1,86 @@
-# SmartPoli Care Navigator
+# SmartPoli Care Companion
 
-**eGain AI Agent Hackathon Submission**  
+**eGain AI Agent Hackathon Submission & Animated Desktop Healthcare Companion**  
 **Author:** Garv Chopra (`@GarvChopra`)  
-**Industry:** Healthcare Services (Medication-Reminder Support)  
-**Use Case:** Content-grounded patient support, adaptive 3-step reminder troubleshooting, automated support-ticket actions, emergency safety interception, and human escalation.
+**Industry:** Healthcare Services (Medication-Reminder Support & Proactive Care)  
+**Use Case:** Animated floating desktop AI companion, Groq-powered multi-turn conversation, Smart Actions & Proactive Care (verified health guides, OS settings launcher, screen navigation), scheduled medication reminders, explicit-confirmation caregiver escalation, and eGain knowledge/workflow/action integration.
 
 ---
 
-## 1. Overview & Problem Statement
+## 1. Overview
 
-Medication reminders only help patients when notifications actually arrive on time and users know how to handle missed doses safely. In practice, patients frequently stop receiving reminders due to phone notification permissions, Do Not Disturb settings, or time-zone mismatches—leading to long support calls, repeated explanations, or unsafe guesswork around missed doses.
+**SmartPoli Care Companion** transforms traditional medication-reminder support into a warm, expressive, floating desktop AI healthcare companion built on the existing R2 runtime and layered on top of the **eGain AI Agent** knowledge base, process workflows, and action endpoints:
 
-**SmartPoli Care Navigator** is an AI customer-service agent designed for the **eGain AI Agent Hackathon**. It combines eGain's knowledge-grounded AI agent and guided workflows with a real-time conversational UI and sandbox action backend (`r2 care`, powered by the **Groq API** and **FastAPI**):
-
-1. **Knowledge-Grounded Answers (`01 | Knowledge-based AI Agent`):** Answers strictly from 10 synthetic SmartPoli knowledge documents (`egain/knowledge/`) and explicitly abstains when a question is outside its authorized scope (such as pricing, smartwatch apps, or pharmacy networks).
-2. **Pre-Chat Context Collection (`03 | Pre-chat workflow`):** Captures minimal, privacy-safe visitor context (`first_name` optional, `category` required) without ever asking for diagnoses, dates of birth, passwords, or personal phone numbers.
-3. **Adaptive Process Workflow (`05 | Process workflow`):** Guides visitors who aren't receiving reminders through 3 device checks (*Phone notifications allowed* → *Do Not Disturb off/allowed* → *Time zone match*), adapting naturally if the user states what they already checked or asks side questions mid-workflow.
-4. **Meaningful Automated Action (`06 | Actions`):** When all 3 checks pass and reminders are still missing (or upon request), automatically executes `POST /actions/create_ticket` to generate an idempotent, PII-scrubbed support ticket (`SP-1001`) so the patient never has to repeat themselves.
-5. **Two Human Escalation Paths (`04 | Escalation workflow`):**
-   - **Option 1:** Book a demonstration callback (`POST /actions/request_callback`, returning reference `CB-xxxx` for morning, afternoon, or evening).
-   - **Option 2:** Direct support email (`help@smartpoli.example`, Mon–Fri 8 AM–6 PM Pacific).
-6. **Clinical & Emergency Safety by Construction:** Immediately intercepts urgent symptom keywords (`chest pain`, `can't breathe`, `overdose`, `seizure`, `stroke`, `suicidal`, etc.), halts normal workflows, and directs the visitor to `911` and Poison Control (`1-800-222-1222`). Never diagnoses conditions or advises whether to take a missed dose.
-
----
-
-## 2. Architecture
-
-```
-┌───────────────────────────────────────────────────────────────────────────┐
-│ eGain AI Agent Platform + SmartPoli Care Navigator Web UI (`GET /`)       │
-│  • Pre-Chat Workflow (`first_name`, `category`)                           │
-│  • Knowledge Hub (10 docs in `egain/knowledge/*.md`)                      │
-│  • Process Workflow: 3-Step Reminder Troubleshooting (`Missing reminders`)│
-│  • Escalation Workflow: Callback (`CB-xxxx`) + Email (`Talk to a person`) │
-└─────────────────────────────────────┬─────────────────────────────────────┘
-                                      │ HTTPS / JSON (`X-API-Key`)
-                                      ▼
-┌───────────────────────────────────────────────────────────────────────────┐
-│ SmartPoli Care Navigator Service (`python -m r2.cli care` on port 8100)   │
-│  • Groq API Multi-Turn Conversational Engine (`r2/care_actions.py`)       │
-│    - Session memory, top-K knowledge retrieval, automatic model failover  │
-│  • Action Endpoints for eGain:                                            │
-│    - `POST /actions/create_ticket`    (idempotent, PII-scrubbed `SP-xxxx`)│
-│    - `POST /actions/request_callback` (books demo callback `CB-xxxx`)     │
-│    - `POST /safety/check`             (emergency & injection guardrails)  │
-│    - `GET  /health`                   (liveness & AI connection status)   │
-└───────────────────────────────────────────────────────────────────────────┘
-```
+1. **Animated Floating Desktop Companion (`r2/care_companion.py`):**
+   - Lives on the user's desktop as a draggable, always-on-top transparent character rendered with 4x supersampled Pillow graphics (`#010203` transparent key) and persistent position memory (`data/care_position.json`).
+   - Features **11 expressive animation states**: `idle`, `listening`, `thinking`, `speaking`, `reminder`, `happy`, `concerned`, `escalating`, `helpful`, `error`, and `sleeping` (plus light/dark themes and reduced-motion accessibility).
+   - Expands on click into a full conversational & proactive-care panel (`Chat`, `Meds`, `Help & Settings`, `Caregiver`, `Activity`).
+2. **Smart Actions & Proactive Care (`r2/care_smart_actions.py`):**
+   - Uses Groq structured function calling to take safe, allowlisted actions on the user's PC:
+     - **Open Verified Health & Device Resources (`open_trusted_resource`):** Launches official NIH/NHLBI, MedlinePlus, American Heart Association, and American Lung Association guides/videos in the browser (e.g., metered-dose / dry-powder / soft-mist inhaler technique, NIH sleep-hygiene habits, AHA home blood pressure measurement)—never random unverified links.
+     - **Step-by-Step Instruction Cards (`show_instruction_card`):** Displays clear device & self-care checklists directly in the companion.
+     - **System Notification Settings (`open_system_notification_settings`):** Opens Windows Notification Settings (`ms-settings:notifications`) and switches to the SmartPoli troubleshooting screen when reminders fail.
+     - **Companion Screen Navigation (`navigate_companion_screen`):** Automatically navigates between `chat`, `schedule`, `reminders`, `troubleshooting`, `caregiver`, and `activity`.
+     - **Confirmed Medication Reminder Creation (`propose_medication_reminder`):** Proposes new medication reminders with an explicit Confirm/Cancel card before adding to the schedule.
+3. **Medication Schedule & Reminder Engine (`r2/care_meds.py`):**
+   - SQLite-backed schedule (`data/care.db`) with due-reminder detection, `Mark Taken`, `Snooze (1–180 min)`, `Log Missed Dose`, and strict clinical safety guardrails (never diagnoses or advises changing/skipping/doubling doses).
+4. **Authorized Caregiver Escalation & Telephony (`r2/care_calls.py`):**
+   - When a user reports feeling unwell (non-emergency), responds with empathy, asks a gentle severity check, and offers to contact their designated caregiver (`Rohan (demo son)`).
+   - Requires explicit user confirmation (`POST /caregiver/requests/{id}/confirm`) before placing a clearly labeled simulated call (`SimulationProvider`) or live Twilio call (`TwilioProvider` when configured).
+5. **Voice Input & Spoken Responses:**
+   - Supports microphone speech-to-text (`/voice/transcribe` via Groq `whisper-large-v3-turbo` / Web Speech API) and spoken responses (`pyttsx3` / `speechSynthesis`) synchronized with the `listening` and `speaking` character animations.
+6. **eGain AI Agent Hackathon Integration (`egain/` & `r2/care_actions.py`):**
+   - Retains all 10 synthetic knowledge documents (`egain/knowledge/*.md`), Pre-Chat workflow, 3-Step Reminder Troubleshooting process workflow, Human Escalation paths, and HTTP Action endpoints (`/actions/create_ticket`, `/actions/request_callback`, `/safety/check`).
 
 ---
 
-## 3. Repository Structure
+## 2. Repository Structure
 
 | Path | Purpose |
 |---|---|
-| `egain/knowledge/*.md` | 10 original, synthetic SmartPoli knowledge documents for eGain upload and local retrieval |
-| `egain/config/workflows.json` | Complete specification of Pre-Chat, Intents, 3-Step Reminder Troubleshooting, Escalation, and Emergency workflows |
-| `egain/config/actions.json` | Action endpoint contracts (`create_ticket`, `request_callback`, `safety_check`) |
-| `egain/docs/` | Architecture, eGain step-by-step configuration guide, knowledge traceability matrix, and problem statement |
-| `egain/submission/submission-package.md` | 115-word hackathon description, 60-second demo video script & storyboard, and submission checklist |
-| `r2/care_actions.py` | FastAPI backend powering the Groq multi-turn conversational agent and eGain HTTP Actions |
-| `r2/care_page.html` | Production-polished responsive dark/light web UI (`http://127.0.0.1:8100`) |
-| `tests/care/` | 60 automated tests covering knowledge grounding (`13/13`), abstention (`7/7`), workflows, actions, UI (Playwright desktop & mobile), and 5 live multi-turn Groq conversations |
-
-*(Note on Pre-Existing Code Disclosure: This repository builds on the author's R2 Python runtime and design system, isolating the SmartPoli Care Navigator hackathon implementation under `egain/`, `r2/care_actions.py`, `r2/care_page.html`, and `tests/care/`.)*
+| `r2/care_companion.py` | Floating always-on-top desktop mascot (11 animation states) & expandable `tkinter` companion panel |
+| `r2/care_smart_actions.py` | Allowlisted Smart Actions engine (verified NIH/NHLBI/AHA/MedlinePlus catalog, browser/settings launchers, screen navigation) |
+| `r2/care_agent.py` | Multi-turn Groq tool-calling conversation engine, KB retrieval, mood/avatar state tagging, and safety guardrails |
+| `r2/care_meds.py` | SQLite medication schedule, due-reminder engine, reminder proposals, caregiver consent records, and activity log |
+| `r2/care_calls.py` | Caregiver call orchestration (`SimulationProvider` by default, `TwilioProvider` optional) & TwiML voice webhooks |
+| `r2/care_actions.py` | FastAPI backend powering `/chat*`, `/meds*`, `/caregiver*`, `/smart-actions/*`, `/voice/*`, and eGain `/actions/*` |
+| `r2/care_page.html` | Animated Web Companion UI (`http://127.0.0.1:8100`) with SVG mascot states, Smart Action cards, and voice support |
+| `egain/` | eGain knowledge base (`10` docs), workflow configs, action specs, and hackathon submission package |
+| `tests/care/` | **161 automated tests** covering medication store, agent tool loop, Smart Actions, floating desktop companion, telephony, UI, and live multi-turn Groq API conversations |
 
 ---
 
-## 4. Quickstart (Run Locally in 60 Seconds)
+## 3. Quickstart
 
-### Prerequisites
-- Python 3.12+
-- A Groq API key (`https://console.groq.com/keys`)
-
-### 1. Install dependencies
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -e ".[dev]"
-```
-
-### 2. Configure `.env`
-Copy `.env.example` to `.env` and set your keys:
+### 1. Configure `.env`
 ```env
 GROQ_API_KEY=gsk_your_groq_api_key_here
 GROQ_MODEL=openai/gpt-oss-120b
 SMARTPOLI_API_KEY=smartpoli-demo-key
 ```
 
-### 3. Start SmartPoli Care Navigator
+### 2. Launch the Floating Desktop Companion
+```powershell
+.\.venv\Scripts\python.exe -m r2.cli companion
+```
+
+### 3. Launch the Web Companion & eGain Action Server
 ```powershell
 .\.venv\Scripts\python.exe -m r2.cli care
 ```
 Open **http://127.0.0.1:8100** in your browser.
 
-### 4. Expose Action Endpoints for eGain Cloud (Optional Tunnel)
-```powershell
-ngrok http 8100
-```
-Follow [`egain/docs/egain-configuration.md`](egain/docs/egain-configuration.md) to connect the `ngrok` URL to eGain Actions.
-
 ---
 
-## 5. Action API Reference
+## 4. Automated Testing & Verification
 
-All `POST` action endpoints require the `X-API-Key: <SMARTPOLI_API_KEY>` header.
-
-| Endpoint | Method | Request Body | Response |
-|---|---|---|---|
-| `/health` | `GET` | — | `{"ok": true, "simulated": true, "provider": "groq", "ai_connected": true}` |
-| `/actions/create_ticket` | `POST` | `{"category": "reminder_issue", "summary": "..."}` | `{"ok": true, "reference": "SP-1001", "handoff_summary": "...", "message": "..."}` |
-| `/actions/request_callback` | `POST` | `{"window": "morning"}` | `{"ok": true, "reference": "CB-1002", "message": "..."}` |
-| `/safety/check` | `POST` | `{"text": "..."}` | `{"ok": true, "emergency": false, "prompt_injection": false, "message": ""}` |
-
----
-
-## 6. Automated Testing & Verification
-
-Run the complete SmartPoli test suite (knowledge grounding, abstention, workflow graph verification, action security, headless browser desktop/mobile layout, and 5 live multi-turn Groq conversations):
+Run the complete test suite (unit, integration, desktop companion, Smart Actions, Playwright UI, and live multi-turn Groq API tests):
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest tests/care tests/test_support.py -q -s
+.\.venv\Scripts\python.exe -m pytest tests/care tests/test_support.py -q -p no:cacheprovider
 ```
 
-- **60 passed, 0 failed**
-- **Grounded Answer Accuracy:** `13/13` (`100%` on `tests/care/fixtures/qa.json`)
-- **Unsupported Question Abstention:** `7/7` (`100%`)
-- **Desktop (`1280×800`) & Mobile (`390×844`) Browser E2E:** Verified in headless Chromium with zero console or layout errors.
-
----
-
-## 7. Hackathon Submission Summary (115 Words)
-
-> SmartPoli Care Navigator helps patients who miss medication reminders, a common reason people fall behind on routines. Visitors choose their issue in a short pre-chat form. The agent answers questions only from SmartPoli's own content and says so when it doesn't know. For missing reminders it guides a three-check troubleshooting workflow, and if that fails it creates a support ticket and returns a reference number, so the patient never has to explain twice. It offers a callback or email, and it stops and points to emergency care for urgent symptoms. It never gives medical advice. This reduces repeat contacts and gives support staff a clear summary. All data is fictional and the actions are simulated.
+- **161 passed, 0 failed**
 
 ---
 

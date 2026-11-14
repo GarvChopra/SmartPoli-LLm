@@ -19,7 +19,7 @@ RUN pip install --no-cache-dir -r requirements-demo.txt
 
 COPY r2 ./r2
 COPY skills ./skills
-RUN useradd --create-home --uid 10001 r2 && mkdir /data && chown r2 /data
+RUN useradd --create-home --uid 10001 r2 && mkdir -p /data /app/data && chown -R r2:r2 /app /data
 USER r2
 EXPOSE 8080
 

@@ -909,6 +909,8 @@ def main() -> int:
 
     load_dotenv()
     logging.basicConfig(level=logging.INFO)
+    is_container = os.environ.get("R2_PROFILE", "").strip().lower() == "demo" or bool(os.environ.get("RENDER"))
+    host = "0.0.0.0" if is_container else os.environ.get("R2_HOST", "127.0.0.1")
     uvicorn.run(create_app(db_path=Path(os.environ.get("R2_DATA_DIR", "data")) / "care.db"),
-                host="127.0.0.1", port=int(os.environ.get("PORT", "8100")))
+                host=host, port=int(os.environ.get("PORT", "8100")))
     return 0

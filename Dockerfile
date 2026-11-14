@@ -11,7 +11,8 @@ ENV PYTHONUNBUFFERED=1 \
     R2_DATA_DIR=/data \
     R2_CLAUDE=0 \
     R2_BRAIN=openai \
-    R2_OPENAI_BASE_URL=
+    R2_OPENAI_BASE_URL= \
+    SMARTPOLI_API_KEY=smartpoli-demo-key
 
 WORKDIR /app
 COPY requirements-demo.txt .
@@ -19,13 +20,12 @@ RUN pip install --no-cache-dir -r requirements-demo.txt
 
 COPY r2 ./r2
 COPY skills ./skills
+COPY egain ./egain
 RUN useradd --create-home --uid 10001 r2 && mkdir -p /data /app/data && chown -R r2:r2 /app /data
 USER r2
 EXPOSE 8080
 
 # Secrets come from the platform, never from the image:
-#   R2_OPENAI_API_KEY   Nebius Token Factory key
-#   R2_OPENAI_MODEL     e.g. the Nemotron Super model id; optional R2_FAST_MODEL and R2_DEEP_MODEL
-#   R2_DEMO_CODE        the access code printed in the README testing instructions
-#   TAVILY_API_KEY      optional, for Tavily search
-CMD ["python", "-c", "import sys; from r2.cli import main; sys.exit(main(['serve']))"]
+#   GROQ_API_KEY        Groq API key for SmartPoli Care Companion
+#   SMARTPOLI_API_KEY   eGain action API key (defaults to smartpoli-demo-key)
+CMD ["python", "-c", "import sys; from r2.cli import main; sys.exit(main(['care']))"]

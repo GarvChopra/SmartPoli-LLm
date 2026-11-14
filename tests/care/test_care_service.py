@@ -63,9 +63,15 @@ def test_pii_scrubbed_from_ticket_summary(client, H):
     assert "jane@real.com" not in r["handoff_summary"] and "206" not in r["handoff_summary"]
 
 
-def test_emergency_in_ticket_creates_no_ticket(client, H):
+def test_emergency_in_ticket_creates_emergency_ticket(client, H):
     r = client.post("/actions/create_ticket", json={"category": "other", "summary": "I have chest pain and took too many pills"}, headers=H).json()
-    assert r["emergency"] is True and "911" in r["message"] and "reference" not in r
+    assert r["ok"] is True
+    assert r["emergency"] is True and ("911" in r["message"] or "112" in r["message"])
+    assert r["reference"].startswith("SP-")
+    got = client.get(f"/admin/tickets/{r['reference']}", headers=H).json()
+    assert got["ok"] is True
+    assert got["category"] == "emergency_escalation"
+    assert "urgent" in got["status"] or got.get("priority") == "urgent"
 
 
 @pytest.mark.parametrize("text", ["I have chest pain", "I can't breathe", "my dad had a seizure", "I think I overdosed", "feeling suicidal"])

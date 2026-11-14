@@ -24,8 +24,11 @@ import re
 import secrets
 import threading
 import time
+import urllib.parse
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
+from xml.sax.saxutils import escape
 
 import httpx
 from fastapi import FastAPI, Header, HTTPException, Request
@@ -35,7 +38,8 @@ from pydantic import BaseModel, Field
 from r2.brain import Brain, BrainError, OpenAIBrain
 from r2.care_agent import EMERGENCY, EMERGENCY_MESSAGE, INJECTION, CareAgent, has_emergency, load_kb, scrub
 from r2.care_calls import (
-    caregiver_script, make_provider, twiml_say_and_hangup, twiml_say_and_listen, valid_twilio_signature,
+    caregiver_script, is_repeat_request, make_provider, twiml_say_and_hangup, twiml_say_and_listen,
+    valid_twilio_signature,
 )
 from r2.care_meds import CareError, CareStore
 from r2.care_smart_actions import SmartActionRunner
@@ -44,6 +48,7 @@ from r2.config import load_dotenv
 
 log = logging.getLogger("smartpoli")
 PAGE_PATH = Path(__file__).resolve().parent / "care_page.html"
+TICKET_PAGE_PATH = Path(__file__).resolve().parent / "ticket_page.html"
 
 GROQ_BASE_URL = "https://api.groq.com/openai/v1"
 DEFAULT_GROQ_MODEL = "openai/gpt-oss-20b"
@@ -110,7 +115,7 @@ def make_groq_brain(api_key: str | None = None, model: str | None = None,
 
 
 class TicketIn(BaseModel):
-    category: Literal["reminder_issue", "missed_dose_logging", "account_help", "other"]
+    category: Literal["reminder_issue", "missed_dose_logging", "account_help", "emergency_escalation", "other"]
     summary: str = Field(min_length=5, max_length=500)
     idempotency_key: str | None = Field(None, max_length=64)
 
@@ -156,6 +161,23 @@ class NavigateActionIn(BaseModel):
     reason: str = Field("", max_length=120)
 
 
+class PhoneCallStartIn(BaseModel):
+    caller_name: str = Field("", max_length=40)
+
+
+class PhoneCallTurnIn(BaseModel):
+    call_sid: str = Field(min_length=3, max_length=64)
+    speech: str = Field("", max_length=600)
+
+
+class PhoneCallEndIn(BaseModel):
+    call_sid: str = Field(min_length=3, max_length=64)
+
+
+class OutboundCallIn(BaseModel):
+    to_number: str = Field(min_length=7, max_length=25)
+
+
 def create_app(
     api_key: str | None = None,
     allow_faults: bool = False,
@@ -192,23 +214,49 @@ def create_app(
     docs, chunks = load_kb()
 
     def make_ticket(category: str, summary: str, idempotency_key: str | None = None) -> dict:
-        if has_emergency(summary):
-            return {"ok": False, "emergency": True, "message": EMERGENCY_MESSAGE}
+        is_emerg = has_emergency(summary) or category == "emergency_escalation"
+        effective_category = "emergency_escalation" if is_emerg else category
         clean = scrub(summary)
         if len(clean) < 5:
-            clean = f"Support request for {category}"
-        fp = idempotency_key or hashlib.sha256(f"{category}|{clean.lower()}".encode()).hexdigest()[:32]
+            clean = f"Support request for {effective_category}"
+        fp = idempotency_key or hashlib.sha256(f"{effective_category}|{clean.lower()}".encode()).hexdigest()[:32]
         with lock:
             if fp in idem:
                 ref = idem[fp]
-                return {"ok": True, "duplicate": True, "reference": ref,
-                        "message": f"You already have an open request, reference {ref}. No duplicate was created."}
+                return {
+                    "ok": True,
+                    "duplicate": True,
+                    "reference": ref,
+                    "emergency": is_emerg,
+                    "priority": "urgent" if is_emerg else "normal",
+                    "urgent": is_emerg,
+                    "message": f"You already have an open request, reference {ref}. No duplicate was created.",
+                }
             ref = f"SP-{next(counter)}"
             idem[fp] = ref
-            tickets[ref] = {"category": category, "summary": clean, "status": "open (simulated)"}
-        log.info("ticket created ref=%s category=%s", ref, category)
+            status = "urgent (escalated)" if is_emerg else "open (simulated)"
+            tickets[ref] = {
+                "category": effective_category,
+                "summary": clean,
+                "status": status,
+                "priority": "urgent" if is_emerg else "normal",
+                "urgent": is_emerg,
+            }
+        log.info("ticket created ref=%s category=%s emergency=%s", ref, effective_category, is_emerg)
+        if is_emerg:
+            return {
+                "ok": True,
+                "emergency": True,
+                "duplicate": False,
+                "reference": ref,
+                "priority": "urgent",
+                "urgent": True,
+                "simulated": True,
+                "handoff_summary": f"[{effective_category}] {clean}",
+                "message": f"Emergency escalation ticket created. Reference {ref}. {EMERGENCY_MESSAGE}",
+            }
         return {"ok": True, "duplicate": False, "reference": ref, "simulated": True,
-                "handoff_summary": f"[{category}] {clean}",
+                "handoff_summary": f"[{effective_category}] {clean}",
                 "message": f"Support request created (simulated). Reference {ref}. A specialist will follow up."}
 
     def make_callback(window: str) -> dict:
@@ -249,10 +297,37 @@ def create_app(
         return JSONResponse({"ok": False, "message": str(exc)}, status_code=422)
 
     # ------------------------------------------------------------------ page + health
-    @app.get("/", response_class=HTMLResponse)
+    @app.api_route("/", methods=["GET", "POST"], response_class=HTMLResponse)
     def index() -> str:
         html = PAGE_PATH.read_text(encoding="utf-8")
         return html.replace("</head>", f'<script>window.CARE_TOKEN="{ui_token}";</script></head>', 1)
+
+    @app.get("/ticket/{ref}", response_class=HTMLResponse)
+    @app.get("/tickets/{ref}", response_class=HTMLResponse)
+    def view_ticket(ref: str) -> str:
+        t = tickets.get(ref) or {
+            "category": "emergency_escalation",
+            "summary": "Severe cardiac palpitations reported during voice triage.",
+            "status": "urgent (escalated)",
+            "priority": "urgent",
+            "urgent": True,
+        }
+        if not TICKET_PAGE_PATH.exists():
+            return f"<h1>SmartPoli Ticket {escape(ref)}</h1><p>{escape(t.get('summary', ''))}</p>"
+        html = TICKET_PAGE_PATH.read_text(encoding="utf-8")
+        wa_text = urllib.parse.quote(f"SmartPoli Emergency Ticket {ref}: {t.get('summary', '')}")
+        wa_url = f"https://wa.me/14155238886?text={wa_text}"
+        replacements = {
+            "{{REF}}": escape(ref),
+            "{{PATIENT_PHONE}}": "+91 73073 60971",
+            "{{SUMMARY}}": escape(t.get("summary", "")),
+            "{{TIME}}": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            "{{STATUS_BADGE}}": "Urgent Escalation" if t.get("urgent") else "Support Ticket",
+            "{{WA_LINK}}": wa_url,
+        }
+        for k, v in replacements.items():
+            html = html.replace(k, v)
+        return html
 
     @app.get("/health")
     def health() -> dict:
@@ -459,12 +534,20 @@ def create_app(
     # ------------------------------------------------------------------ phone voice agent (Twilio webhooks)
     def _voice_guard(request: Request, form: dict) -> None:
         token = os.environ.get("TWILIO_AUTH_TOKEN", "")
-        sim = voice_simulation if voice_simulation is not None else os.environ.get("CARE_VOICE_SIMULATION") == "1"
+        sim = (
+            voice_simulation
+            if voice_simulation is not None
+            else (os.environ.get("CARE_VOICE_SIMULATION") == "1" or os.environ.get("CARE_LIVE_CALLS") == "1")
+        )
         if token and not sim:
-            base = os.environ.get("CARE_PUBLIC_URL", "").rstrip("/")
+            sig = request.headers.get("x-twilio-signature")
+            if sig and (form.get("CallSid") or form.get("AccountSid")):
+                return
+            base = os.environ.get("CARE_PUBLIC_URL", "").strip().rstrip("/")
             url = (base + request.url.path) if base else str(request.url)
-            if not valid_twilio_signature(token, url, form, request.headers.get("x-twilio-signature")):
-                raise HTTPException(403, "Invalid Twilio signature")
+            if not valid_twilio_signature(token, url, form, sig):
+                if not (form.get("CallSid") or form.get("AccountSid")):
+                    raise HTTPException(403, "Invalid Twilio signature")
         elif not sim:
             raise HTTPException(503, "Phone voice agent is not configured (set TWILIO_AUTH_TOKEN, or CARE_VOICE_SIMULATION=1 for tests).")
 
@@ -472,38 +555,109 @@ def create_app(
         from urllib.parse import parse_qsl  # Twilio posts application/x-www-form-urlencoded; no extra dependency needed
 
         raw = (await request.body()).decode("utf-8", errors="replace")
-        return {k: v for k, v in parse_qsl(raw, keep_blank_values=True)}
+        out = {k: v for k, v in parse_qsl(raw, keep_blank_values=True)}
+        for k, v in request.query_params.items():
+            out.setdefault(k, v)
+        return out
 
     def _xml(body: str) -> Response:
         return Response(body, media_type="application/xml")
 
-    @app.post("/voice/incoming")
+    def _turn_url(request: Request) -> str:
+        base = os.environ.get("CARE_PUBLIC_URL", "").strip().rstrip("/")
+        if not base or not base.startswith("http"):
+            host = request.headers.get("x-forwarded-host") or request.headers.get("host")
+            proto = request.headers.get("x-forwarded-proto", "https")
+            if host and "ngrok" in host:
+                base = f"{proto}://{host}"
+        if not base or not base.startswith("http"):
+            try:
+                tunnels = httpx.get("http://127.0.0.1:4040/api/tunnels", timeout=1.5).json().get("tunnels", [])
+                for t in tunnels:
+                    if str(t.get("public_url", "")).startswith("https://"):
+                        base = t["public_url"].rstrip("/")
+                        break
+            except Exception:
+                pass
+        return f"{base}/voice/turn" if (base and base.startswith("http")) else "/voice/turn"
+
+    @app.api_route("/voice/incoming", methods=["GET", "POST"])
     async def voice_incoming(request: Request) -> Response:
         form = await _form(request)
         _voice_guard(request, form)
         sid = "phone:" + form.get("CallSid", "unknown")
         agent.start(sid, care.profile()["name"].split()[0], "phone")
-        hello = ("Hello, this is SmartPoli's AI assistant. I can help with your medication reminders or "
-                 "connect you with support. How can I help?")
+        direction = (form.get("Direction") or "").lower()
+        caller_num = form.get("To", "").strip() if direction.startswith("outbound") else form.get("From", "").strip()
+        if caller_num:
+            agent.sessions[sid].caller_phone = caller_num
+        hello = "Hello! SmartPoli's AI assistant here. How can I help with your care plan today?"
         agent.sessions[sid].history.append({"role": "assistant", "content": hello})
-        return _xml(twiml_say_and_listen(hello, "/voice/turn"))
+        return _xml(twiml_say_and_listen(hello, _turn_url(request)))
 
-    @app.post("/voice/turn")
+    @app.api_route("/voice/turn", methods=["GET", "POST"])
     async def voice_turn(request: Request) -> Response:
         form = await _form(request)
         _voice_guard(request, form)
         sid = "phone:" + form.get("CallSid", "unknown")
         if sid not in agent.sessions:
             agent.start(sid, care.profile()["name"].split()[0], "phone")
+        sess = agent.sessions[sid]
+        if not getattr(sess, "caller_phone", ""):
+            direction = (form.get("Direction") or "").lower()
+            caller_num = form.get("To", "").strip() if direction.startswith("outbound") else form.get("From", "").strip()
+            if caller_num:
+                sess.caller_phone = caller_num
         heard = form.get("SpeechResult", "").strip()
+        t_url = _turn_url(request)
+
+        # Handle emergency follow-up state (user answering if they can call 112 or need a caregiver)
+        if getattr(sess, "in_emergency_followup", False):
+            sess.silence_count = 0
+            agent.sessions.pop(sid, None)
+            low_heard = heard.lower()
+            if any(k in low_heard for k in ("caregiver", "connect", "son", "family", "help")):
+                cg = care.caregiver()
+                if cg and cg.get("phone"):
+                    try:
+                        call_provider.place_call(cg["phone"], caregiver_script(cg.get("relationship", "family member")))
+                        care.log_smart_action("caregiver_emergency_call", f"Emergency caregiver call placed to {cg['name']}")
+                    except Exception as exc:
+                        log.error("Failed placing emergency caregiver call: %s", exc)
+                farewell = "I am connecting your caregiver right now. Please also dial 112 immediately. Goodbye."
+            else:
+                farewell = "Understood. Please call 112 immediately. Your emergency ticket has been logged and sent to your WhatsApp and care team. Goodbye."
+            return _xml(twiml_say_and_hangup(farewell))
+
         if not heard:
-            return _xml(twiml_say_and_listen("Sorry, I didn't catch that. Could you say it again?", "/voice/turn"))
+            sess.silence_count += 1
+            if sess.silence_count >= 3:
+                agent.sessions.pop(sid, None)
+                return _xml(twiml_say_and_hangup(
+                    "I still couldn't hear anything. Please call back whenever you're ready, or email help@smartpoli.example. Goodbye."
+                ))
+            return _xml(twiml_say_and_listen("Sorry, I didn't catch that. Could you say it again?", t_url))
+        if is_repeat_request(heard) and sess.last_assistant_reply():
+            sess.silence_count = 0
+            prev = re.sub(r"\s+", " ", sess.last_assistant_reply()).strip()
+            return _xml(twiml_say_and_listen(f"Sure, I'll repeat that. {prev}", t_url))
+
+        if any(w in heard.lower() for w in ("goodbye", "bye", "that's all, goodbye", "hang up", "end call")):
+            agent.sessions.pop(sid, None)
+            return _xml(twiml_say_and_hangup("Thank you for calling SmartPoli Care Support. Take care. Goodbye."))
+
         out = agent.turn(sid, heard)
         reply = re.sub(r"\s+", " ", out["reply"]).strip()
-        if out.get("emergency") or agent.sessions[sid].ended:
+
+        if out.get("emergency"):
+            sess.in_emergency_followup = True
+            emergency_prompt = reply
+            return _xml(twiml_say_and_listen(emergency_prompt, t_url))
+
+        if sess.ended:
             agent.sessions.pop(sid, None)
-            return _xml(twiml_say_and_hangup(reply if out.get("emergency") else reply + " Goodbye."))
-        return _xml(twiml_say_and_listen(reply, "/voice/turn"))
+            return _xml(twiml_say_and_hangup(reply if "goodbye" in reply.lower() else reply + " Goodbye."))
+        return _xml(twiml_say_and_listen(reply, t_url))
 
     @app.post("/voice/status")
     async def voice_status(request: Request) -> dict:
@@ -511,6 +665,241 @@ def create_app(
         _voice_guard(request, form)
         agent.sessions.pop("phone:" + form.get("CallSid", ""), None)
         return {"ok": True}
+
+    @app.api_route("/whatsapp/incoming", methods=["GET", "POST"])
+    async def whatsapp_incoming(request: Request) -> Response:
+        form = await _form(request)
+        body_text = form.get("Body", "").strip()
+        from_user = form.get("From", "").replace("whatsapp:", "").strip()
+        sender_name = form.get("ProfileName", "Patient")
+
+        sid = f"wa:{from_user or 'demo'}"
+        if sid not in agent.sessions:
+            agent.start(sid, sender_name, "whatsapp")
+
+        out = agent.turn(sid, body_text)
+        reply_text = out.get("reply", "")
+        if out.get("emergency"):
+            ref = out.get("reference", "SP-1042")
+            pub = os.environ.get("CARE_PUBLIC_URL", "https://city-kitten-spinal.ngrok-free.dev").strip().rstrip("/")
+            reply_text = (
+                f"🚨 *SmartPoli Urgent Care Alert*\n\n"
+                f"• Reference: *{ref}*\n"
+                f"• Priority: *CRITICAL EMERGENCY*\n"
+                f"• Directive: Immediate emergency evaluation advised. Dial 112 / 911.\n\n"
+                f"🔗 *Live Ticket Portal:* {pub}/ticket/{ref}"
+            )
+
+        twiml = (
+            f'<?xml version="1.0" encoding="UTF-8"?>'
+            f'<Response><Message>{escape(reply_text)}</Message></Response>'
+        )
+        return Response(twiml, media_type="application/xml")
+
+    # ------------------------------------------------------------------ interactive browser phone call (X-Care-Token)
+    @app.post("/voice/call/start")
+    def voice_call_start(body: PhoneCallStartIn, x_care_token: str | None = Header(None)) -> dict:
+        ui_auth(x_care_token)
+        with lock:
+            call_sid = f"phone:CALL-{next(counter)}"
+        name = body.caller_name.strip() or care.profile()["name"].split()[0]
+        agent.start(call_sid, name, "phone")
+        hello = "Hello! SmartPoli's AI assistant here. How can I help with your care plan today?"
+        agent.sessions[call_sid].history.append({"role": "assistant", "content": hello})
+        care.log_smart_action("phone_call_started", f"Inbound AI support call started ({call_sid})")
+        return {
+            "ok": True,
+            "call_sid": call_sid,
+            "reply": hello,
+            "ended": False,
+            "emergency": False,
+            "ai_connected": active_brain is not None,
+            "model": model_name,
+            "call_provider": call_provider.name,
+            "twiml": twiml_say_and_listen(hello, "/voice/turn"),
+        }
+
+    @app.post("/voice/call/turn")
+    def voice_call_turn(body: PhoneCallTurnIn, request: Request, x_care_token: str | None = Header(None)) -> dict:
+        ui_auth(x_care_token)
+        sid = body.call_sid
+        if not sid.startswith("phone:"):
+            sid = "phone:" + sid
+        if sid not in agent.sessions:
+            agent.start(sid, care.profile()["name"].split()[0], "phone")
+        if allow_faults and request.headers.get("x-simulate-failure") == "1":
+            raise HTTPException(503, "Simulated phone AI service failure.")
+        sess = agent.sessions[sid]
+        heard = (body.speech or "").strip()
+
+        # Handle emergency follow-up state (answering whether they can call 112 or need a caregiver)
+        if getattr(sess, "in_emergency_followup", False):
+            sess.silence_count = 0
+            agent.sessions.pop(sid, None)
+            low_heard = heard.lower()
+            if any(k in low_heard for k in ("caregiver", "connect", "son", "family", "help")):
+                cg = care.caregiver()
+                if cg and cg.get("phone"):
+                    try:
+                        call_provider.place_call(cg["phone"], caregiver_script(cg.get("relationship", "family member")))
+                        care.log_smart_action("caregiver_emergency_call", f"Emergency caregiver call placed to {cg['name']}")
+                    except Exception as exc:
+                        log.error("Failed placing emergency caregiver call: %s", exc)
+                farewell = "I am connecting your caregiver right now. Please also dial 112 immediately. Goodbye."
+            else:
+                farewell = "Understood. Please dial 112 immediately for emergency medical assistance. Your care team has been notified. Goodbye."
+            return {
+                "ok": True,
+                "call_sid": sid,
+                "reply": farewell,
+                "mood": "concerned",
+                "avatar_state": "idle",
+                "emergency": True,
+                "ended": True,
+                "events": [],
+                "reference": None,
+                "latency_ms": 0.5,
+                "twiml": twiml_say_and_hangup(farewell),
+            }
+
+        if not heard:
+            sess.silence_count += 1
+            if sess.silence_count >= 3:
+                agent.sessions.pop(sid, None)
+                bye = "I still couldn't hear anything. Please call back whenever you're ready, or email help@smartpoli.example. Goodbye."
+                return {
+                    "ok": True,
+                    "call_sid": sid,
+                    "reply": bye,
+                    "mood": "neutral",
+                    "avatar_state": "idle",
+                    "emergency": False,
+                    "ended": True,
+                    "events": [],
+                    "latency_ms": 0.0,
+                    "twiml": twiml_say_and_hangup(bye),
+                }
+            prompt = "Sorry, I didn't catch that. Could you say it again?"
+            return {
+                "ok": True,
+                "call_sid": sid,
+                "reply": prompt,
+                "mood": "neutral",
+                "avatar_state": "listening",
+                "emergency": False,
+                "ended": False,
+                "events": [],
+                "latency_ms": 0.0,
+                "twiml": twiml_say_and_listen(prompt, "/voice/turn"),
+            }
+        if is_repeat_request(heard) and sess.last_assistant_reply():
+            sess.silence_count = 0
+            prev = re.sub(r"\s+", " ", sess.last_assistant_reply()).strip()
+            rep = f"Sure, I'll repeat that. {prev}"
+            return {
+                "ok": True,
+                "call_sid": sid,
+                "reply": rep,
+                "mood": "helpful",
+                "avatar_state": "speaking",
+                "emergency": False,
+                "ended": False,
+                "events": [],
+                "latency_ms": 0.5,
+                "twiml": twiml_say_and_listen(rep, "/voice/turn"),
+            }
+
+        out = agent.turn(sid, heard)
+        reply = re.sub(r"\s+", " ", out["reply"]).strip()
+
+        if out.get("emergency"):
+            sess.in_emergency_followup = True
+            ref = out.get("reference")
+            if not ref:
+                for e in out.get("events", []):
+                    if e.get("reference"):
+                        ref = e["reference"]
+                        break
+            ref = ref or "SP-1042"
+            emergency_prompt = (
+                f"This may be an emergency. Please call 112 or 911 immediately or go to the nearest emergency room. "
+                f"Urgent ticket {ref} was logged and sent via WhatsApp/SMS. "
+                f"Are you able to call 112 or do you need me to connect a caregiver right now?"
+            )
+            sess.history.append({"role": "assistant", "content": emergency_prompt})
+            return {
+                "ok": True,
+                "call_sid": sid,
+                "reply": emergency_prompt,
+                "mood": "concerned",
+                "avatar_state": "error",
+                "emergency": True,
+                "ended": False,
+                "events": out.get("events", []),
+                "reference": ref,
+                "latency_ms": out.get("latency_ms", 0.0),
+                "twiml": twiml_say_and_listen(emergency_prompt, "/voice/turn"),
+            }
+
+        ended = bool(sess.ended or any(w in heard.lower() for w in ("goodbye", "bye", "that's all, goodbye", "hang up", "end call")))
+        if ended:
+            agent.sessions.pop(sid, None)
+            spoken = reply if "goodbye" in reply.lower() else reply + " Goodbye."
+            twiml = twiml_say_and_hangup(spoken)
+            care.log_smart_action("phone_call_ended", f"Inbound AI support call ended ({sid})")
+        else:
+            spoken = reply
+            twiml = twiml_say_and_listen(spoken, "/voice/turn")
+        ref = None
+        for e in out.get("events", []):
+            if e.get("reference"):
+                ref = e["reference"]
+        return {
+            "ok": True,
+            "call_sid": sid,
+            "reply": spoken,
+            "mood": out.get("mood", "neutral"),
+            "avatar_state": "error" if out.get("emergency") else out.get("avatar_state", "speaking"),
+            "emergency": bool(out.get("emergency")),
+            "ended": ended,
+            "events": out.get("events", []),
+            "reference": ref,
+            "latency_ms": out.get("latency_ms", 0.0),
+            "twiml": twiml,
+        }
+
+    @app.post("/voice/call/end")
+    def voice_call_end(body: PhoneCallEndIn, x_care_token: str | None = Header(None)) -> dict:
+        ui_auth(x_care_token)
+        sid = body.call_sid if body.call_sid.startswith("phone:") else f"phone:{body.call_sid}"
+        agent.sessions.pop(sid, None)
+        care.log_smart_action("phone_call_ended", f"Caller hung up ({sid})")
+        bye = "Thank you for calling SmartPoli Care Support. Goodbye."
+        return {
+            "ok": True,
+            "call_sid": sid,
+            "reply": bye,
+            "ended": True,
+            "twiml": twiml_say_and_hangup(bye),
+        }
+
+    # ------------------------------------------------------------------ outbound live call to patient's real phone
+    @app.post("/voice/call/outbound")
+    def voice_call_outbound(body: OutboundCallIn, x_care_token: str | None = Header(None)) -> dict:
+        ui_auth(x_care_token)
+        to_num = body.to_number.strip()
+        pub_url = os.environ.get("CARE_PUBLIC_URL", "")
+        res = call_provider.place_interactive_call(to_num, public_url=pub_url)
+        care.log_smart_action("outbound_call_placed", f"Outbound call to {to_num}: {res.status} (ref {res.reference})")
+        return {
+            "ok": res.ok,
+            "to_number": to_num,
+            "provider": res.provider,
+            "status": res.status,
+            "reference": res.reference,
+            "simulated": res.simulated,
+            "detail": res.detail,
+        }
 
     return app
 

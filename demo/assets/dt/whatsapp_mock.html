@@ -1,0 +1,856 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WhatsApp Web — SmartPoli Care Navigator</title>
+  <style>
+    :root {
+      --rail: #202c33;
+      --sidebar: #111b21;
+      --header: #202c33;
+      --hover: #202c33;
+      --active: #2a3942;
+      --chat-bg: #0b141a;
+      --out-bg: #005c4b;
+      --in-bg: #202c33;
+      --preview-bg: #182229;
+      --input-bg: #2a3942;
+      --border: rgba(134, 150, 160, 0.16);
+      --text: #e9edef;
+      --muted: #8696a0;
+      --wa-green: #00a884;
+      --wa-green-bright: #25d366;
+      --wa-link: #53bdeb;
+      --blue-tick: #53bdeb;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 1600px;
+      height: 960px;
+      overflow: hidden;
+      background: var(--sidebar);
+      color: var(--text);
+      font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .app {
+      display: flex;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Left slim icon rail */
+    .rail {
+      width: 60px;
+      background: var(--rail);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0;
+      flex: none;
+    }
+
+    .rail-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .rail-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #aebac1;
+      position: relative;
+    }
+
+    .rail-btn.active {
+      background: #374248;
+      color: #e9edef;
+    }
+
+    .rail-badge {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--wa-green);
+      color: #111b21;
+      font-size: 10px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .user-avatar-sm {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0d9488, #134e4a);
+      color: #ecfeff;
+      font-weight: 700;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid rgba(45, 212, 191, 0.4);
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 390px;
+      background: var(--sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex: none;
+    }
+
+    .sidebar-top {
+      height: 64px;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .sidebar-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.01em;
+    }
+
+    .top-icons {
+      display: flex;
+      gap: 18px;
+      color: #aebac1;
+    }
+
+    .search-wrap {
+      padding: 4px 14px 10px;
+    }
+
+    .search-box {
+      height: 36px;
+      background: var(--header);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      padding: 0 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .filter-pill {
+      padding: 5px 12px;
+      border-radius: 99px;
+      background: var(--header);
+      color: var(--muted);
+      font-size: 12.5px;
+      font-weight: 500;
+    }
+
+    .filter-pill.active {
+      background: #0a332c;
+      color: #00a884;
+    }
+
+    .chat-list {
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .thread {
+      display: flex;
+      align-items: center;
+      gap: 13px;
+      padding: 13px 16px;
+      border-bottom: 1px solid rgba(134, 150, 160, 0.08);
+    }
+
+    .thread.active {
+      background: var(--active);
+    }
+
+    .thread-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      flex: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 16px;
+      color: #fff;
+    }
+
+    .thread-avatar.smartpoli {
+      background: linear-gradient(145deg, #0d9488, #0f172a);
+      border: 1.5px solid rgba(45, 212, 191, 0.55);
+    }
+
+    .thread-avatar.muted-1 { background: #233138; color: #94a3b8; }
+    .thread-avatar.muted-2 { background: #1e2d34; color: #94a3b8; }
+    .thread-avatar.muted-3 { background: #262f34; color: #94a3b8; }
+
+    .thread-body {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .thread-row1 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+
+    .thread-name {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 15.5px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .thread.muted-thread .thread-name {
+      font-weight: 500;
+      color: #cbd5e1;
+    }
+
+    .thread-time {
+      font-size: 12px;
+      color: var(--muted);
+      flex: none;
+    }
+
+    .thread.active .thread-time {
+      color: var(--wa-green-bright);
+      font-weight: 600;
+    }
+
+    .thread-phone {
+      font-size: 11.5px;
+      color: #5eead4;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      margin-bottom: 2px;
+      opacity: 0.9;
+    }
+
+    .thread-row2 {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+
+    .thread-preview {
+      font-size: 13.5px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .thread.active .thread-preview {
+      color: #d1d7db;
+      font-weight: 400;
+    }
+
+    .pin-icon {
+      color: var(--muted);
+      flex: none;
+      display: flex;
+      align-items: center;
+    }
+
+    /* Main chat area */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: var(--chat-bg);
+      position: relative;
+      min-width: 0;
+    }
+
+    /* Subtle WhatsApp doodle pattern */
+    .chat-wallpaper {
+      position: absolute;
+      inset: 64px 0 64px 0;
+      background-color: var(--chat-bg);
+      background-image: url("data:image/svg+xml,%3Csvg width='120' height='120' viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' stroke='%23e9edef' stroke-opacity='0.045' stroke-width='1.3'%3E%3Ccircle cx='24' cy='24' r='9'/%3E%3Cpath d='M75 18l10 10-10 10-10-10z'/%3E%3Cpath d='M20 78h16v12H20z' rx='3'/%3E%3Cpath d='M78 74c6-6 14 2 8 10s-14 4-8-10z'/%3E%3Cpath d='M52 46l6 10h-12z'/%3E%3Ccircle cx='102' cy='54' r='6'/%3E%3Cpath d='M48 98c4-5 12-5 16 0'/%3E%3C/g%3E%3C/svg%3E");
+      background-repeat: repeat;
+      pointer-events: none;
+    }
+
+    .chat-header {
+      height: 64px;
+      background: var(--header);
+      border-bottom: 1px solid var(--border);
+      padding: 0 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+      flex: none;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .header-meta-title {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .header-meta-sub {
+      font-size: 12.5px;
+      color: var(--muted);
+      margin-top: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .header-meta-sub .num {
+      color: #cbd5e1;
+      font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+      font-size: 12px;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      color: #aebac1;
+    }
+
+    .chat-scroll {
+      position: relative;
+      z-index: 1;
+      flex: 1;
+      padding: 14px 58px 18px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 11px;
+      overflow: hidden;
+    }
+
+    .day-pill {
+      align-self: center;
+      background: #182229;
+      color: #8696a0;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 5px 12px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+      margin-bottom: 4px;
+    }
+
+    .msg-row {
+      display: flex;
+      width: 100%;
+    }
+
+    .msg-row.out {
+      justify-content: flex-end;
+    }
+
+    .msg-row.in {
+      justify-content: flex-start;
+    }
+
+    /* Authentic WhatsApp message bubbles + SVG corner tails */
+    .bubble {
+      position: relative;
+      padding: 8px 11px 7px 12px;
+      box-shadow: 0 1px 1.5px rgba(0, 0, 0, 0.24);
+      font-size: 14.2px;
+      line-height: 1.45;
+      color: var(--text);
+    }
+
+    .bubble.out {
+      background: var(--out-bg);
+      border-radius: 8px 0 8px 8px;
+      min-width: 132px;
+      padding: 7px 10px 7px 12px;
+      margin-right: 8px;
+    }
+
+    .tail-out {
+      position: absolute;
+      top: 0;
+      right: -8px;
+      width: 8px;
+      height: 13px;
+      color: var(--out-bg);
+    }
+
+    .bubble.in {
+      background: var(--in-bg);
+      border-radius: 0 8px 8px 8px;
+      max-width: 560px;
+      width: 545px;
+      margin-left: 8px;
+    }
+
+    .tail-in {
+      position: absolute;
+      top: 0;
+      left: -8px;
+      width: 8px;
+      height: 13px;
+      color: var(--in-bg);
+    }
+
+    .out-row {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .msg-time {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      color: rgba(233, 237, 239, 0.60);
+      white-space: nowrap;
+    }
+
+    /* Authentic WhatsApp plain-text lines & formatting */
+    .wa-body {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      word-wrap: break-word;
+    }
+
+    .wa-title {
+      font-weight: 700;
+      color: #f4f7f8;
+      margin-bottom: 2px;
+    }
+
+    .wa-bullets {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      margin: 2px 0 4px;
+    }
+
+    .wa-bullets li {
+      color: #e9edef;
+    }
+
+    .wa-italic-note {
+      font-style: italic;
+      color: #9bb0ba;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .wa-meta-row {
+      color: #e9edef;
+    }
+
+    .wa-meta-row strong {
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .wa-footer-time {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 3px;
+    }
+
+    /* Authentic WhatsApp Link Preview Box */
+    .wa-link-preview {
+      display: block;
+      text-decoration: none;
+      background: var(--preview-bg);
+      border-radius: 6px;
+      border-left: 4px solid var(--wa-green);
+      padding: 8px 11px;
+      margin-bottom: 8px;
+    }
+
+    .wa-lp-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #e9edef;
+      line-height: 1.3;
+      margin-bottom: 2px;
+    }
+
+    .wa-lp-desc {
+      font-size: 12.5px;
+      color: #8696a0;
+      line-height: 1.35;
+      margin-bottom: 3px;
+    }
+
+    .wa-lp-domain {
+      font-size: 11.5px;
+      color: #8696a0;
+    }
+
+    /* Authentic WhatsApp Blue Clickable URL */
+    .wa-url-link {
+      display: inline-block;
+      margin-top: 2px;
+      padding: 3px 0;
+      color: var(--wa-link);
+      font-size: 14px;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+
+    /* Composer */
+    .composer {
+      height: 64px;
+      background: var(--header);
+      border-top: 1px solid var(--border);
+      padding: 0 18px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 2;
+      flex: none;
+    }
+
+    .composer-input {
+      flex: 1;
+      height: 42px;
+      background: var(--input-bg);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      color: var(--muted);
+      font-size: 14.5px;
+    }
+
+    .icon-muted {
+      color: #8696a0;
+      display: flex;
+      align-items: center;
+    }
+
+    body[data-step="1"] .ticket-step {
+      display: none;
+    }
+  </style>
+</head>
+<body data-step="2">
+  <div class="app">
+    <!-- Left Navigation Rail -->
+    <aside class="rail" aria-hidden="true">
+      <div class="rail-group">
+        <div class="rail-btn active">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M19.005 3.175H4.674C3.642 3.175 3 3.789 3 4.821V21.02l3.544-3.514h12.461c1.033 0 2.064-1.06 2.064-2.093V4.821c-.001-1.032-1.032-1.646-2.064-1.646zm-4.989 9.869H7.041V11.1h6.975v1.944zm3-4H7.041V7.1h9.975v1.944z"/></svg>
+          <span class="rail-badge">1</span>
+        </div>
+        <div class="rail-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <div class="rail-btn">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        </div>
+      </div>
+      <div class="rail-group">
+        <div class="rail-btn">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </div>
+        <div class="user-avatar-sm">AL</div>
+      </div>
+    </aside>
+
+    <!-- Chat List Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-top">
+        <div class="sidebar-title">Chats</div>
+        <div class="top-icons">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </div>
+      </div>
+
+      <div class="search-wrap">
+        <div class="search-box">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <span>Search or start new chat</span>
+        </div>
+      </div>
+
+      <div class="filter-row">
+        <span class="filter-pill active">All</span>
+        <span class="filter-pill">Unread</span>
+        <span class="filter-pill">Favorites</span>
+        <span class="filter-pill">Clinical</span>
+      </div>
+
+      <div class="chat-list">
+        <!-- Pinned Active Chat -->
+        <div class="thread active">
+          <div class="thread-avatar smartpoli">
+            <svg width="26" height="26" viewBox="0 0 96 96" aria-hidden="true">
+              <rect x="44" y="6" width="8" height="10" rx="4" fill="#2dd4bf"/>
+              <circle cx="48" cy="6" r="5" fill="#5eead4"/>
+              <rect x="12" y="16" width="72" height="64" rx="22" fill="#0d9488" stroke="#5eead4" stroke-width="3"/>
+              <rect x="19" y="24" width="58" height="48" rx="16" fill="#0b1519"/>
+              <circle cx="36" cy="44" r="5" fill="#2dd4bf"/>
+              <circle cx="60" cy="44" r="5" fill="#2dd4bf"/>
+              <path d="M39 56 Q48 63 57 56" fill="none" stroke="#2dd4bf" stroke-width="3.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div class="thread-body">
+            <div class="thread-row1">
+              <span class="thread-name">
+                SmartPoli Care Navigator
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-label="Verified">
+                  <circle cx="12" cy="12" r="10" fill="#00a884"/>
+                  <path d="M8.5 12.5l2.3 2.3 4.8-5.1" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </span>
+              <span class="thread-time">12:14 PM</span>
+            </div>
+            <div class="thread-phone">+1 (737) 250-8034</div>
+            <div class="thread-row2">
+              <span id="sidebarPreview" class="thread-preview">🚨 URGENT HEALTH TICKET #SP-1042</span>
+              <span class="pin-icon" title="Pinned">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M16 3H8v2h1v5l-2 3v2h4v6l1 1 1-1v-6h4v-2l-2-3V5h1V3z"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Muted Secondary Threads -->
+        <div class="thread muted-thread">
+          <div class="thread-avatar muted-1">DS</div>
+          <div class="thread-body">
+            <div class="thread-row1">
+              <span class="thread-name">Dr. Sharma · Cardiology</span>
+              <span class="thread-time">11:42 AM</span>
+            </div>
+            <div class="thread-row2">
+              <span class="thread-preview">Clinic check-in confirmed for Friday 10 AM</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="thread muted-thread">
+          <div class="thread-avatar muted-2">PR</div>
+          <div class="thread-body">
+            <div class="thread-row1">
+              <span class="thread-name">Pharmacy Refills</span>
+              <span class="thread-time">Yesterday</span>
+            </div>
+            <div class="thread-row2">
+              <span class="thread-preview">Prescription refill #RX-409 ready for pickup</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="thread muted-thread">
+          <div class="thread-avatar muted-3">PC</div>
+          <div class="thread-body">
+            <div class="thread-row1">
+              <span class="thread-name">Priya · Authorized Caregiver</span>
+              <span class="thread-time">Yesterday</span>
+            </div>
+            <div class="thread-row2">
+              <span class="thread-preview">Evening dose reminder verified</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Active Chat Thread -->
+    <section class="main">
+      <div class="chat-wallpaper"></div>
+
+      <header class="chat-header">
+        <div class="header-left">
+          <div class="thread-avatar smartpoli" style="width:42px;height:42px;">
+            <svg width="23" height="23" viewBox="0 0 96 96" aria-hidden="true">
+              <rect x="44" y="6" width="8" height="10" rx="4" fill="#2dd4bf"/>
+              <circle cx="48" cy="6" r="5" fill="#5eead4"/>
+              <rect x="12" y="16" width="72" height="64" rx="22" fill="#0d9488" stroke="#5eead4" stroke-width="3"/>
+              <rect x="19" y="24" width="58" height="48" rx="16" fill="#0b1519"/>
+              <circle cx="36" cy="44" r="5" fill="#2dd4bf"/>
+              <circle cx="60" cy="44" r="5" fill="#2dd4bf"/>
+              <path d="M39 56 Q48 63 57 56" fill="none" stroke="#2dd4bf" stroke-width="3.5" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <div>
+            <div class="header-meta-title">
+              <span>SmartPoli Care Navigator</span>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-label="Verified">
+                <circle cx="12" cy="12" r="10" fill="#00a884"/>
+                <path d="M8.5 12.5l2.3 2.3 4.8-5.1" stroke="#ffffff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+            <div class="header-meta-sub">
+              <span>Business Account</span>
+              <span>•</span>
+              <span class="num">+1 (737) 250-8034</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+        </div>
+      </header>
+
+      <div class="chat-scroll">
+        <div class="day-pill">TODAY</div>
+
+        <!-- Earlier outgoing patient sandbox join message (only outgoing has blue ticks) -->
+        <div class="msg-row out">
+          <div class="bubble out">
+            <svg class="tail-out" viewBox="0 0 8 13" fill="currentColor"><path d="M5.188 1H0v11.193l6.467-8.625C7.526 2.156 6.958 1 5.188 1z"/></svg>
+            <div class="out-row">
+              <span>join care-poli</span>
+              <span class="msg-time">
+                12:12 PM
+                <svg width="16" height="11" viewBox="0 0 18 11" fill="none"><path d="M1 5.5L4.5 9L11.5 2M6.5 5.5L10 9L17 2" stroke="#53bdeb" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Incoming Message 1: Blood Pressure Checklist (Genuine WhatsApp message style, NO ticks) -->
+        <div class="msg-row in">
+          <div class="bubble in bp-card">
+            <svg class="tail-in" viewBox="0 0 8 13" fill="currentColor"><path d="M1.533 3.568L8 12.193V1H2.812C1.042 1 .474 2.156 1.533 3.568z"/></svg>
+            <div class="wa-body">
+              <div class="wa-title"><strong>🩺 SmartPoli Care Navigator — Blood Pressure Check</strong></div>
+              <ul class="wa-bullets">
+                <li>• 1. Rest quietly for 5 minutes with feet flat on the floor</li>
+                <li>• 2. Place cuff on bare upper arm at heart level</li>
+                <li>• 3. Take two readings 1 minute apart</li>
+                <li>• 4. Log your reading in SmartPoli Care Companion</li>
+              </ul>
+              <div class="wa-italic-note"><em>AHA Home Measurement Protocol · Not a medical diagnosis</em></div>
+            </div>
+            <div class="wa-footer-time">
+              <span class="msg-time">12:14 PM</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Incoming Message 2: Urgent Health Ticket #SP-1042 with Link Preview Box & Clickable Blue URL -->
+        <div class="msg-row in ticket-step">
+          <div class="bubble in urgent-card">
+            <svg class="tail-in" viewBox="0 0 8 13" fill="currentColor"><path d="M1.533 3.568L8 12.193V1H2.812C1.042 1 .474 2.156 1.533 3.568z"/></svg>
+
+            <!-- WhatsApp Native Link Preview Box -->
+            <div class="wa-link-preview">
+              <div class="wa-lp-title">SmartPoli Clinical Support Ticket — #SP-1042</div>
+              <div class="wa-lp-desc">Urgent Escalation: Severe chest pain &amp; heart palpitations reported during voice triage. Immediate evaluation required.</div>
+              <div class="wa-lp-domain">city-kitten-spinal.ngrok-free.dev</div>
+            </div>
+
+            <div class="wa-body">
+              <div class="wa-title"><strong>🚨 URGENT HEALTH TICKET #SP-1042</strong></div>
+              <div class="wa-meta-row"><strong>Patient:</strong> Alex (+91 73073 60971)</div>
+              <div class="wa-meta-row"><strong>Symptoms:</strong> Severe chest pain &amp; heart palpitations</div>
+              <div class="wa-meta-row"><strong>Directive:</strong> Please call <strong>112</strong> or <strong>911</strong> immediately. Your caregiver has been notified.</div>
+              <div class="wa-meta-row" style="margin-top:4px;">📋 <strong>Open Live Clinical Ticket:</strong></div>
+              <div>
+                <a id="ticketPortalLink" class="wa-url-link" href="https://city-kitten-spinal.ngrok-free.dev/ticket/SP-1042">https://city-kitten-spinal.ngrok-free.dev/ticket/SP-1042</a>
+              </div>
+            </div>
+
+            <div class="wa-footer-time">
+              <span class="msg-time">12:14 PM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <footer class="composer" aria-hidden="true">
+        <span class="icon-muted">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+        </span>
+        <span class="icon-muted">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </span>
+        <div class="composer-input">Type a message</div>
+        <span class="icon-muted">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+        </span>
+      </footer>
+    </section>
+  </div>
+
+  <script>
+    function applyStep(step) {
+      const s = String(step || "2");
+      document.body.setAttribute("data-step", s);
+      const preview = document.getElementById("sidebarPreview");
+      if (preview) {
+        preview.textContent = s === "1"
+          ? "🩺 SmartPoli Care Navigator — Blood Pressure Check"
+          : "🚨 URGENT HEALTH TICKET #SP-1042";
+      }
+    }
+    const params = new URLSearchParams(window.location.search);
+    applyStep(params.get("step") || "2");
+    window.setWhatsAppStep = applyStep;
+  </script>
+</body>
+</html>

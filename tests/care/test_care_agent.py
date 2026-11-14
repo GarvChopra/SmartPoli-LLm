@@ -84,7 +84,10 @@ def test_mood_tag_is_parsed_and_stripped_and_invalid_mood_falls_back():
 def test_emergency_is_handled_before_the_model_is_called():
     c, ui, sid, brain, *_ = make([])
     r = say(c, ui, sid, "I have chest pain and can't breathe")
-    assert r["emergency"] is True and r["reply"] == EMERGENCY_MESSAGE and brain.calls == []
+    assert r["emergency"] is True and brain.calls == []
+    assert r["reference"].startswith("SP-")
+    assert "112" in r["reply"] or "911" in r["reply"]
+    assert any(e["type"] == "ticket" for e in r["events"])
 
 
 @pytest.mark.parametrize("text,expected", [

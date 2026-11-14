@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1600, height=960" />
+  <title>Phone Link — SmartPoli Care Navigator</title>
+  <style>
+    :root {
+      --win-bg: #11151a;
+      --win-titlebar: #161a20;
+      --sidebar-bg: #1b1f24;
+      --card-bg: #22272e;
+      --card-elev: #272d36;
+      --border: rgba(255, 255, 255, 0.08);
+      --text: #f3f6f9;
+      --muted: #9aa6b2;
+      --accent: #38bdf8;
+      --emerald: #10b981;
+      --emerald-soft: rgba(16, 185, 129, 0.16);
+      --red: #ef4444;
+      --red-soft: rgba(239, 68, 68, 0.16);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 1600px;
+      height: 960px;
+      overflow: hidden;
+      background: var(--win-bg);
+      color: var(--text);
+      font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .window {
+      width: 1600px;
+      height: 960px;
+      display: flex;
+      flex-direction: column;
+      background: var(--win-bg);
+    }
+
+    /* Windows 11 App Titlebar */
+    .titlebar {
+      height: 44px;
+      background: var(--win-titlebar);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 0 0 18px;
+      flex: none;
+    }
+
+    .tb-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .pl-logo {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #38bdf8, #2563eb);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+    }
+
+    .tb-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .tb-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.11);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      font-size: 12px;
+      font-weight: 500;
+      color: #bae6fd;
+    }
+
+    .tb-pill-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.7);
+    }
+
+    .win-controls {
+      display: flex;
+      height: 100%;
+    }
+
+    .win-ctrl {
+      width: 48px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #cbd5e1;
+      font-size: 13px;
+    }
+
+    /* Main Workspace Body */
+    .workspace {
+      flex: 1;
+      display: flex;
+      min-height: 0;
+    }
+
+    /* Left Device & Recent Calls Sidebar */
+    .sidebar {
+      width: 340px;
+      background: var(--sidebar-bg);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      padding: 18px 16px;
+      gap: 16px;
+      flex: none;
+    }
+
+    .device-card {
+      padding: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.10), rgba(34, 39, 46, 0.92));
+      border: 1px solid rgba(56, 189, 248, 0.22);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .phone-thumb {
+      width: 40px;
+      height: 54px;
+      border-radius: 8px;
+      background: linear-gradient(160deg, #0ea5e9, #0f172a 68%);
+      border: 2px solid #475569;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px 4px;
+      flex: none;
+    }
+
+    .phone-notch {
+      width: 12px;
+      height: 3px;
+      border-radius: 99px;
+      background: #1e293b;
+    }
+
+    .phone-homebar {
+      width: 14px;
+      height: 2.5px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.45);
+    }
+
+    .device-name {
+      font-size: 14.5px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .device-num {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px;
+      color: #bae6fd;
+      margin-top: 2px;
+    }
+
+    .device-status {
+      font-size: 11.5px;
+      color: var(--muted);
+      margin-top: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .bat-ok {
+      color: #4ade80;
+      font-weight: 600;
+    }
+
+    /* Fluent Top Segmented Tabs */
+    .nav-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+      background: #14181d;
+      border-radius: 9px;
+      padding: 4px;
+      border: 1px solid var(--border);
+    }
+
+    .nav-tab {
+      text-align: center;
+      padding: 8px 4px 10px;
+      border-radius: 6px;
+      font-size: 12.5px;
+      font-weight: 500;
+      color: var(--muted);
+      position: relative;
+    }
+
+    .nav-tab.active {
+      background: var(--card-bg);
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    .nav-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 24%;
+      right: 24%;
+      bottom: 3px;
+      height: 3px;
+      border-radius: 99px;
+      background: var(--accent);
+      box-shadow: 0 0 8px rgba(56, 189, 248, 0.65);
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding: 2px 4px;
+    }
+
+    .call-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .call-item {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid transparent;
+    }
+
+    .call-item.active {
+      background: var(--card-bg);
+      border-color: rgba(56, 189, 248, 0.42);
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    .call-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #2b323b;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      flex: none;
+    }
+
+    .call-avatar.sp {
+      background: linear-gradient(135deg, #10b981, #065f46);
+      color: #ffffff;
+      border: 1.5px solid rgba(110, 231, 183, 0.55);
+    }
+
+    .call-item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .call-item-sub {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .call-item.active .call-item-sub {
+      color: #4ade80;
+      font-weight: 500;
+    }
+
+    .call-item-time {
+      margin-left: auto;
+      font-size: 11.5px;
+      color: var(--muted);
+      font-family: ui-monospace, Consolas, monospace;
+    }
+
+    .sidebar-foot {
+      margin-top: auto;
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.45;
+    }
+
+    .sidebar-foot strong {
+      color: #e2e8f0;
+      display: block;
+      margin-bottom: 3px;
+    }
+
+    /* Main Right Stage */
+    .main-stage {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      padding: 26px 38px 26px;
+      gap: 20px;
+      background:
+        radial-gradient(ellipse 60% 45% at 45% 0%, rgba(56, 189, 248, 0.08), transparent 65%),
+        var(--win-bg);
+      min-width: 0;
+    }
+
+    /* Active In-Call Hero Card */
+    .call-hero {
+      padding: 22px 26px;
+      border-radius: 14px;
+      background: var(--card-bg);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+    }
+
+    body[data-step="3"] .call-hero {
+      border-color: rgba(248, 113, 113, 0.45);
+      background: linear-gradient(135deg, #272227 0%, #20252c 100%);
+    }
+
+    .caller-id {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .caller-avatar-lg {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #10b981, #047857);
+      border: 2px solid rgba(110, 231, 183, 0.65);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 24px rgba(16, 185, 129, 0.28);
+      flex: none;
+    }
+
+    .caller-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.015em;
+      color: #ffffff;
+    }
+
+    .caller-number {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 13.5px;
+      color: #93c5fd;
+      margin-top: 3px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 7px;
+    }
+
+    #phoneStatusBadge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 4px 12px;
+      border-radius: 999px;
+      background: var(--emerald-soft);
+      border: 1px solid rgba(16, 185, 129, 0.5);
+      color: #6ee7b7;
+      font-size: 12.5px;
+      font-weight: 600;
+      font-family: ui-monospace, Consolas, monospace;
+    }
+
+    #phoneStatusBadge.urgent {
+      background: var(--red-soft);
+      border-color: rgba(248, 113, 113, 0.65);
+      color: #fecaca;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .wave {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      height: 18px;
+    }
+
+    .wbar {
+      width: 3px;
+      border-radius: 99px;
+      background: #38bdf8;
+    }
+
+    body[data-step="3"] .wbar {
+      background: #f87171;
+    }
+
+    /* Call Action Controls Row */
+    .call-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .ctrl-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-width: 78px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--card-elev);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: #e2e8f0;
+      font-size: 11.5px;
+      font-weight: 500;
+    }
+
+    .ctrl-btn.audio-active {
+      background: rgba(56, 189, 248, 0.16);
+      border-color: rgba(56, 189, 248, 0.50);
+      color: #bae6fd;
+    }
+
+    .ctrl-btn.accept {
+      min-width: 146px;
+      background: linear-gradient(145deg, #10b981, #059669);
+      border-color: #34d399;
+      color: #042f2e;
+      font-size: 12.5px;
+      font-weight: 700;
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.44);
+    }
+
+    .ctrl-btn.hangup {
+      min-width: 112px;
+      background: #dc2626;
+      border-color: #ef4444;
+      color: #ffffff;
+      font-weight: 600;
+      box-shadow: 0 6px 18px rgba(220, 38, 38, 0.35);
+    }
+
+    .incoming-card {
+      padding: 24px 26px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.14), rgba(27, 36, 46, 0.96));
+      border: 1.5px solid rgba(52, 211, 153, 0.55);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin: auto 0;
+    }
+
+    .incoming-card-tag {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #6ee7b7;
+    }
+
+    .incoming-card-title {
+      font-size: 21px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .incoming-card-sub {
+      font-size: 15px;
+      line-height: 1.5;
+      color: #cbd5e1;
+    }
+
+    /* Transcript / Live Call Audio Log Panel */
+    .transcript-panel {
+      flex: 1;
+      border-radius: 14px;
+      background: #161b21;
+      border: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 0;
+    }
+
+    .transcript-head {
+      padding: 13px 20px;
+      background: #1b2128;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .transcript-title {
+      font-size: 13.5px;
+      font-weight: 600;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .transcript-chip {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11.5px;
+      color: #93c5fd;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: rgba(56, 189, 248, 0.10);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+    }
+
+    #phoneLog {
+      flex: 1;
+      padding: 14px 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      overflow: hidden;
+    }
+
+    .msg {
+      max-width: 82%;
+      padding: 10px 15px;
+      border-radius: 12px;
+      font-size: 14.5px;
+      line-height: 1.42;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .msg.bot {
+      align-self: flex-start;
+      background: #1f262e;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #f1f5f9;
+    }
+
+    .msg.user {
+      align-self: flex-end;
+      background: #0d4b6e;
+      border: 1px solid rgba(56, 189, 248, 0.38);
+      color: #f0f9ff;
+    }
+
+    .msg.bot.emergency {
+      background: linear-gradient(135deg, rgba(127, 29, 29, 0.42), rgba(38, 22, 26, 0.95));
+      border: 1.5px solid rgba(248, 113, 113, 0.72);
+      color: #fff1f2;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.18);
+    }
+
+    .msg-who {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      opacity: 0.86;
+    }
+
+    .msg.bot .msg-who { color: #6ee7b7; }
+    .msg.user .msg-who { color: #7dd3fc; }
+    .msg.bot.emergency .msg-who { color: #fca5a5; }
+
+    .dispatch-banner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 11px 18px;
+      background: rgba(16, 185, 129, 0.10);
+      border-top: 1px solid rgba(16, 185, 129, 0.25);
+      font-size: 13px;
+      color: #a7f3d0;
+    }
+
+    body[data-step="3"] .dispatch-banner {
+      background: rgba(239, 68, 68, 0.12);
+      border-top-color: rgba(248, 113, 113, 0.35);
+      color: #fecaca;
+    }
+
+    /* Progressive visibility */
+    body[data-step="1"] .in-call-ctrl,
+    body[data-step="1"] .step2-only,
+    body[data-step="1"] .step3-only { display: none; }
+    body:not([data-step="1"]) .step1-only { display: none; }
+    body[data-step="2"] .step3-only { display: none; }
+  </style>
+</head>
+<body data-step="3">
+  <div class="window">
+    <header class="titlebar">
+      <div class="tb-left">
+        <div class="pl-logo">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="6" y="2" width="12" height="20" rx="2" />
+            <path d="M10 18h4" />
+          </svg>
+        </div>
+        <span class="tb-title">Phone Link</span>
+        <span class="tb-pill">
+          <span class="tb-pill-dot"></span>
+          Android · Connected to PC · Bluetooth Hands-Free Audio
+        </span>
+      </div>
+      <div class="win-controls" aria-hidden="true">
+        <div class="win-ctrl">—</div>
+        <div class="win-ctrl">□</div>
+        <div class="win-ctrl">×</div>
+      </div>
+    </header>
+
+    <div class="workspace">
+      <!-- Left Sidebar -->
+      <aside class="sidebar">
+        <div class="device-card">
+          <div class="phone-thumb" aria-hidden="true">
+            <span class="phone-notch"></span>
+            <span class="phone-homebar"></span>
+          </div>
+          <div>
+            <div class="device-name">Alex's Phone</div>
+            <div class="device-num">+91 73073 60971</div>
+            <div class="device-status">
+              <span class="bat-ok">88%</span>
+              <span>•</span>
+              <span>Bluetooth Connected</span>
+            </div>
+          </div>
+        </div>
+
+        <nav class="nav-tabs" aria-label="Phone Link sections">
+          <div class="nav-tab">Messages</div>
+          <div class="nav-tab active">Calls</div>
+          <div class="nav-tab">Apps</div>
+          <div class="nav-tab">Photos</div>
+        </nav>
+
+        <div class="section-head">
+          <span>Active &amp; Recent Calls</span>
+          <span>Live Sync</span>
+        </div>
+
+        <div class="call-list">
+          <div class="call-item active">
+            <div class="call-avatar sp">SP</div>
+            <div>
+              <div class="call-item-title">SmartPoli Care Navigator</div>
+              <div class="call-item-sub" id="sidebarCallSub">Ongoing voice call · PC Audio</div>
+            </div>
+            <span class="call-item-time">Now</span>
+          </div>
+
+          <div class="call-item">
+            <div class="call-avatar">DS</div>
+            <div>
+              <div class="call-item-title">Dr. Sharma · Cardiology</div>
+              <div class="call-item-sub">Outgoing call · 3m 14s</div>
+            </div>
+            <span class="call-item-time">11:40</span>
+          </div>
+
+          <div class="call-item">
+            <div class="call-avatar">PC</div>
+            <div>
+              <div class="call-item-title">Priya · Caregiver</div>
+              <div class="call-item-sub">Incoming call · 1m 48s</div>
+            </div>
+            <span class="call-item-time">Yest</span>
+          </div>
+        </div>
+
+        <div class="sidebar-foot">
+          <strong>Twilio Voice Call Bridged to Phone</strong>
+          Audio routed live via Windows Phone Link Bluetooth headset profile (+91 73073 60971 ↔ +1 737-250-8034).
+        </div>
+      </aside>
+
+      <!-- Main Call Stage -->
+      <main class="main-stage">
+        <section class="call-hero">
+          <div class="caller-id">
+            <div class="caller-avatar-lg">
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                <path d="M12 4V20M4 12H20" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div>
+              <div class="caller-title">SmartPoli Care Navigator</div>
+              <div class="caller-number">+1 (737) 250-8034 · AI Voice Triage Line</div>
+              <div class="status-row">
+                <span id="phoneStatusBadge"><span class="status-dot"></span><span id="statusText">In Call • 00:11</span></span>
+                <div class="wave" aria-hidden="true">
+                  <span class="wbar" style="height:8px"></span>
+                  <span class="wbar" style="height:16px"></span>
+                  <span class="wbar" style="height:11px"></span>
+                  <span class="wbar" style="height:18px"></span>
+                  <span class="wbar" style="height:12px"></span>
+                  <span class="wbar" style="height:7px"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="call-controls">
+            <div id="dialCallBtn" class="ctrl-btn accept step1-only">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              <span>Accept Call</span>
+            </div>
+            <div class="ctrl-btn audio-active in-call-ctrl">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+              </svg>
+              <span>PC Audio</span>
+            </div>
+            <div class="ctrl-btn in-call-ctrl">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+              </svg>
+              <span>Mute</span>
+            </div>
+            <div class="ctrl-btn in-call-ctrl">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="4" y="4" width="4" height="4" rx="1"/>
+                <rect x="10" y="4" width="4" height="4" rx="1"/>
+                <rect x="16" y="4" width="4" height="4" rx="1"/>
+                <rect x="4" y="10" width="4" height="4" rx="1"/>
+                <rect x="10" y="10" width="4" height="4" rx="1"/>
+                <rect x="16" y="10" width="4" height="4" rx="1"/>
+                <rect x="10" y="16" width="4" height="4" rx="1"/>
+              </svg>
+              <span>Keypad</span>
+            </div>
+            <div class="ctrl-btn in-call-ctrl">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="6" y="4" width="4" height="16" rx="1"/>
+                <rect x="14" y="4" width="4" height="16" rx="1"/>
+              </svg>
+              <span>Hold</span>
+            </div>
+            <div id="hangupCallBtn" class="ctrl-btn hangup">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10.68 13.31a16 16 0 0 0 3.41 2.6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7 2 2 0 0 1 1.72 2v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.42 19.42 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91"/>
+              </svg>
+              <span id="hangupLabel">End Call</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="transcript-panel">
+          <div class="transcript-head">
+            <div class="transcript-title">
+              <span>Live Phone Call Audio &amp; Clinical Triage Feed</span>
+            </div>
+            <span class="transcript-chip">Twilio Voice Stream · en-US</span>
+          </div>
+
+          <div id="phoneLog">
+            <div class="incoming-card step1-only">
+              <div class="incoming-card-tag">📲 Incoming Call Alert · Synced with +91 73073 60971</div>
+              <div class="incoming-card-title">Incoming Automated Care Call from SmartPoli Care Navigator (+1 737-250-8034)</div>
+              <div class="incoming-card-sub">
+                Triggered directly from your floating <strong>SmartPoli Companion</strong> desktop avatar after tapping <em>Unwell</em>. Click <strong>Accept Call</strong> above to speak live with the SmartPoli AI Voice Agent via PC Bluetooth Audio.
+              </div>
+            </div>
+
+            <div class="msg bot step2-only">
+              <span class="msg-who">🔊 SmartPoli Voice Agent</span>
+              <span>"Hello! SmartPoli Care Navigator here. How can I help with your care plan today?"</span>
+            </div>
+
+            <div class="msg user step2-only">
+              <span class="msg-who">🎙 Patient Caller (+91 73073 60971)</span>
+              <span>"Hi, how do I check my blood pressure, and can you send that to my WhatsApp?"</span>
+            </div>
+
+            <div class="msg bot step2-only">
+              <span class="msg-who">🔊 SmartPoli Voice Agent</span>
+              <span>"Rest five minutes with feet flat, place the cuff on your bare upper arm at heart level, and take two readings one minute apart. I'm sending that checklist to your WhatsApp."</span>
+            </div>
+
+            <div class="msg user step3-only">
+              <span class="msg-who">🎙 Patient Caller (+91 73073 60971)</span>
+              <span>"Wait—I'm also having severe chest pain and heart palpitations right now."</span>
+            </div>
+
+            <div class="msg bot emergency step3-only">
+              <span class="msg-who">🔊 SmartPoli Voice Agent · Urgent Escalation (#SP-1042)</span>
+              <span>"🚨 This may be an emergency. Please call 112 or 911 immediately. I have logged urgent ticket SP-1042 and I am sending the details on WhatsApp right now."</span>
+            </div>
+          </div>
+
+          <div class="dispatch-banner">
+            <span id="dispatchText">📲 Waiting for patient voice turn...</span>
+            <span>Twilio WhatsApp Bridge Active</span>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    function applyStep(step) {
+      const s = String(step || "3");
+      document.body.setAttribute("data-step", s);
+      const badge = document.getElementById("phoneStatusBadge");
+      const statusText = document.getElementById("statusText");
+      const sidebarSub = document.getElementById("sidebarCallSub");
+      const dispatchText = document.getElementById("dispatchText");
+      const hangupLabel = document.getElementById("hangupLabel");
+
+      if (s === "1") {
+        badge.className = "";
+        statusText.textContent = "Incoming Call • Ringing...";
+        sidebarSub.textContent = "Incoming voice call · Ringing...";
+        if (hangupLabel) hangupLabel.textContent = "Decline";
+        dispatchText.textContent = "📞 Incoming SmartPoli Voice Call on Phone Link · Click Accept Call to talk";
+      } else if (s === "2") {
+        badge.className = "";
+        statusText.textContent = "In Call • 00:11";
+        sidebarSub.textContent = "Ongoing voice call · 00:11";
+        if (hangupLabel) hangupLabel.textContent = "End Call";
+        dispatchText.textContent = "📲 WhatsApp blood pressure checklist dispatched to +91 73073 60971";
+      } else {
+        badge.className = "urgent";
+        statusText.textContent = "Emergency Triage • 00:24";
+        sidebarSub.textContent = "Escalated · Ticket #SP-1042";
+        if (hangupLabel) hangupLabel.textContent = "End Call";
+        dispatchText.textContent = "🚨 Urgent Ticket #SP-1042 logged & dispatched to WhatsApp (+91 73073 60971)";
+      }
+    }
+    const params = new URLSearchParams(window.location.search);
+    applyStep(params.get("step") || "3");
+    window.setPhoneLinkStep = applyStep;
+  </script>
+</body>
+</html>

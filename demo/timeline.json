@@ -1,0 +1,224 @@
+{
+  "duration": 58.69,
+  "mix": "out/mix.wav",
+  "vo": "vo/vo.wav",
+  "sample_rate": 48000,
+  "channels": 2,
+  "segments": [
+    {
+      "id": "intro",
+      "chapter": "Hovering Avatar",
+      "badge": "Desktop Companion",
+      "start": 0.0,
+      "end": 5.205,
+      "speaker": "narrator",
+      "subtitle": "Meet SmartPoli Care Navigator: tap the hovering desktop avatar anytime to open your live medication companion.",
+      "turns": [
+        {
+          "speaker": "narrator",
+          "start": 0.22,
+          "end": 5.005,
+          "text": "Meet SmartPoli Care Navigator: tap the hovering desktop avatar anytime to open your live medication companion."
+        }
+      ]
+    },
+    {
+      "id": "kb",
+      "chapter": "Touch & Talk",
+      "badge": "Grounded Policy KB",
+      "start": 5.205,
+      "end": 10.93,
+      "speaker": "narrator",
+      "subtitle": "Touch and talk right in the floating companion\u2014it answers strictly from verified policy and refuses unsafe dosing guesses.",
+      "turns": [
+        {
+          "speaker": "narrator",
+          "start": 5.385,
+          "end": 10.73,
+          "text": "Touch and talk right in the floating companion\u2014it answers strictly from verified policy and refuses unsafe dosing guesses."
+        }
+      ]
+    },
+    {
+      "id": "workflow_stats",
+      "chapter": "Calls Your Phone",
+      "badge": "4 Clinical Workflows",
+      "start": 10.93,
+      "end": 16.04,
+      "speaker": "narrator",
+      "subtitle": "Tap Unwell to request a check-in, and the companion immediately calls your phone across four grounded clinical workflows.",
+      "turns": [
+        {
+          "speaker": "narrator",
+          "start": 11.11,
+          "end": 15.82,
+          "text": "Tap Unwell to request a check-in, and the companion immediately calls your phone across four grounded clinical workflows."
+        }
+      ]
+    },
+    {
+      "id": "voice_bp",
+      "chapter": "Live Voice Guidance",
+      "badge": "Voice Call \u00b7 BP Steps",
+      "start": 16.04,
+      "end": 29.51,
+      "speaker": "dialogue",
+      "subtitle": "Caller: Hi, how do I check my blood pressure, and can you send that to my WhatsApp? Agent: Rest five minutes with feet flat, place the cuff on your bare upper arm at heart level, and take two readings one minute apart. I'm sending that checklist to your WhatsApp.",
+      "turns": [
+        {
+          "speaker": "caller",
+          "start": 17.39,
+          "end": 20.88,
+          "text": "Hi, how do I check my blood pressure, and can you send that to my WhatsApp?"
+        },
+        {
+          "speaker": "agent",
+          "start": 21.16,
+          "end": 29.31,
+          "text": "Rest five minutes with feet flat, place the cuff on your bare upper arm at heart level, and take two readings one minute apart. I'm sending that checklist to your WhatsApp."
+        }
+      ]
+    },
+    {
+      "id": "voice_urgent",
+      "chapter": "Urgent Safety Triage",
+      "badge": "Emergency Triage \u00b7 SP-1042",
+      "start": 29.51,
+      "end": 42.32,
+      "speaker": "dialogue",
+      "subtitle": "Caller: Wait\u2014I'm also having severe chest pain and heart palpitations right now. Agent: This may be an emergency. Please call 112 or 911 immediately. I have logged urgent ticket SP-1042 and I am sending the details on WhatsApp right now.",
+      "turns": [
+        {
+          "speaker": "caller",
+          "start": 29.67,
+          "end": 33.08,
+          "text": "Wait\u2014I'm also having severe chest pain and heart palpitations right now."
+        },
+        {
+          "speaker": "agent",
+          "start": 33.32,
+          "end": 42.1,
+          "text": "This may be an emergency. Please call 112 or 911 immediately. I have logged urgent ticket SP-1042 and I am sending the details on WhatsApp right now."
+        }
+      ]
+    },
+    {
+      "id": "whatsapp",
+      "chapter": "WhatsApp Dispatch",
+      "badge": "WhatsApp Delivery",
+      "start": 42.32,
+      "end": 48.065,
+      "speaker": "narrator",
+      "subtitle": "On WhatsApp, the patient immediately receives the blood pressure checklist and urgent ticket SP-1042 with a direct portal link.",
+      "turns": [
+        {
+          "speaker": "narrator",
+          "start": 42.56,
+          "end": 47.865,
+          "text": "On WhatsApp, the patient immediately receives the blood pressure checklist and urgent ticket SP-1042 with a direct portal link."
+        }
+      ]
+    },
+    {
+      "id": "portal",
+      "chapter": "Patient Ticket Portal",
+      "badge": "Ticket Portal \u00b7 SP-1042",
+      "start": 48.065,
+      "end": 53.025,
+      "speaker": "narrator",
+      "subtitle": "Clicking the ticket opens the live clinical record with delivery confirmations and one-tap caregiver and emergency actions.",
+      "turns": [
+        {
+          "speaker": "narrator",
+          "start": 48.245,
+          "end": 52.785,
+          "text": "Clicking the ticket opens the live clinical record with delivery confirmations and one-tap caregiver and emergency actions."
+        }
+      ]
+    },
+    {
+      "id": "outro",
+      "chapter": "Clinical Safety Notice",
+      "badge": "Triage & Support Only",
+      "start": 53.025,
+      "end": 58.69,
+      "speaker": "narrator",
+      "subtitle": "SmartPoli Care Navigator: a clinical triage and support flag, not a medical diagnosis.",
+      "turns": [
+        {
+          "speaker": "narrator",
+          "start": 53.225,
+          "end": 57.44,
+          "text": "SmartPoli Care Navigator: a clinical triage and support flag, not a medical diagnosis."
+        }
+      ]
+    }
+  ],
+  "sfx_events": [
+    {
+      "name": "click",
+      "at": 2.55,
+      "gain": 0.32
+    },
+    {
+      "name": "click",
+      "at": 5.265,
+      "gain": 0.3
+    },
+    {
+      "name": "pop",
+      "at": 9.09,
+      "gain": 0.26
+    },
+    {
+      "name": "click",
+      "at": 10.99,
+      "gain": 0.34
+    },
+    {
+      "name": "pop",
+      "at": 12.64,
+      "gain": 0.26
+    },
+    {
+      "name": "click",
+      "at": 17.19,
+      "gain": 0.34
+    },
+    {
+      "name": "pop",
+      "at": 29.35,
+      "gain": 0.3
+    },
+    {
+      "name": "pop",
+      "at": 37.29,
+      "gain": 0.28
+    },
+    {
+      "name": "pop",
+      "at": 42.14,
+      "gain": 0.3
+    },
+    {
+      "name": "ding",
+      "at": 42.37,
+      "gain": 0.36
+    },
+    {
+      "name": "pop",
+      "at": 47.895,
+      "gain": 0.28
+    },
+    {
+      "name": "click",
+      "at": 48.125,
+      "gain": 0.34
+    },
+    {
+      "name": "pop",
+      "at": 52.815,
+      "gain": 0.28
+    }
+  ]
+}

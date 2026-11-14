@@ -21,7 +21,7 @@ def test_web_preview_desktop_and_mobile_in_headless_browser():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    brain = FakeBrain([Decision(final="[mood:neutral] Your next medicine is Examplol at 08:00.")] * 4)
+    brain = FakeBrain([Decision(final="[mood:neutral] Your next medicine is Examplol at 08:00.")] * 8)
     app = create_app(api_key=KEY, brain=brain, store=CareStore())
     srv = uvicorn.Server(uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning"))
     th = threading.Thread(target=srv.run, daemon=True)
@@ -60,6 +60,15 @@ def test_web_preview_desktop_and_mobile_in_headless_browser():
                 page.click("#sendBtn")
                 page.locator(".msg.emergency").wait_for()
                 assert "911" in page.inner_text(".msg.emergency")
+                # Verify interactive Phone Call Voice Agent tab
+                page.click("#phoneTabBtn")
+                page.wait_for_selector("#screen-phone:not([hidden])")
+                page.click("#dialCallBtn")
+                page.locator("#phoneLog .msg.bot", has_text="SmartPoli's AI assistant").wait_for()
+                page.fill("#phoneInput", "when is my next medicine?")
+                page.click("#phoneSendBtn")
+                page.locator("#phoneLog .msg.bot", has_text="Examplol at 08:00").wait_for()
+                page.click("#hangupCallBtn")
                 assert not errors
                 page.close()
             browser.close()

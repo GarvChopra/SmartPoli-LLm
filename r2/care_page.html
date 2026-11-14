@@ -133,6 +133,36 @@
       display: flex; justify-content: space-between; align-items: center; gap: 8px;
       padding: 10px 12px; border-radius: 10px; background: var(--card-alt); border: 1px solid var(--line); margin-bottom: 8px;
     }
+    .phone-dialer {
+      background: var(--card-alt); border: 1px solid var(--accent); border-radius: 14px;
+      padding: 14px; margin-bottom: 12px;
+    }
+    .phone-header {
+      display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .phone-number { font-size: 1.05rem; font-weight: 700; color: var(--accent-bright); letter-spacing: .02em; }
+    .voice-wave {
+      display: inline-flex; align-items: center; gap: 3px; height: 18px; margin-left: 6px; vertical-align: middle;
+    }
+    .voice-wave span {
+      width: 3px; height: 6px; border-radius: 2px; background: var(--accent-bright);
+      transition: height .15s ease;
+    }
+    .voice-wave.active span { animation: waveBar .55s ease-in-out infinite alternate; }
+    .voice-wave.active span:nth-child(2) { animation-delay: .12s; }
+    .voice-wave.active span:nth-child(3) { animation-delay: .24s; }
+    .voice-wave.active span:nth-child(4) { animation-delay: .36s; }
+    @keyframes waveBar { from { height: 5px; opacity: .5; } to { height: 17px; opacity: 1; } }
+    button.danger { background: var(--danger); border-color: var(--danger); color: #fff; font-weight: 600; }
+    #phoneLog {
+      height: 260px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px;
+      padding: 8px 2px; border-top: 1px solid var(--line); margin-top: 10px;
+    }
+    .twiml-box {
+      margin-top: 8px; padding: 8px 10px; border-radius: 8px; background: var(--bg);
+      border: 1px solid var(--line); font: 12px/1.4 ui-monospace, SFMono-Regular, Consolas, monospace;
+      color: var(--muted); white-space: pre-wrap; word-break: break-all; max-height: 90px; overflow-y: auto;
+    }
     .floating-dock {
       position: fixed; right: 24px; bottom: 24px; z-index: 9999;
       display: flex; align-items: center; gap: 10px; user-select: none;
@@ -214,6 +244,7 @@
       <div class="row between" style="margin-bottom:10px;">
         <div class="row" style="margin-top:0;">
           <button type="button" class="pill tab-btn tab-active" data-screen="chat">Chat</button>
+          <button type="button" class="pill tab-btn" data-screen="phone" id="phoneTabBtn">📞 Phone Call</button>
           <button type="button" class="pill tab-btn" data-screen="schedule">Meds Schedule</button>
           <button type="button" class="pill tab-btn" data-screen="troubleshooting">Help &amp; Settings</button>
           <button type="button" class="pill tab-btn" data-screen="caregiver">Caregiver</button>
@@ -235,6 +266,60 @@
       <div id="screen-chat" class="companion-screen">
         <div id="log" role="log" aria-live="polite"></div>
         <div id="quickBar" class="quick-bar" aria-label="Suggested responses"></div>
+      </div>
+
+      <!-- Screen: Phone Call Voice Agent -->
+      <div id="screen-phone" class="companion-screen" hidden>
+        <div class="phone-dialer">
+          <div class="phone-header">
+            <div>
+              <div class="phone-number">
+                📞 SmartPoli AI Support Line (1-800-555-POLI)
+                <span id="phoneWave" class="voice-wave" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+              </div>
+              <p class="muted" style="margin:2px 0 0;">Inbound Voice Agent • Reuses SmartPoli Knowledge, Ticket Actions &amp; Safety Guardrails</p>
+            </div>
+            <div class="row" style="margin-top:0;">
+              <span id="phoneStatusBadge" class="chip">on hook</span>
+              <span id="phoneTimerBadge" class="chip">00:00</span>
+              <span id="phoneLatencyBadge" class="chip" title="Last turn latency">latency: --</span>
+              <button id="dialCallBtn" type="button" class="primary">📞 Dial Support Line</button>
+              <button id="hangupCallBtn" type="button" class="danger" hidden>📴 End Call</button>
+            </div>
+          </div>
+
+          <div id="phoneLog" role="log" aria-live="polite">
+            <p class="muted">Click <strong>📞 Dial Support Line</strong> to start a live voice call with the SmartPoli AI Voice Agent.</p>
+          </div>
+
+          <div id="phoneQuickBar" class="quick-bar" aria-label="Sample caller voice prompts"></div>
+
+          <form id="phoneForm" class="composer" novalidate>
+            <button id="phoneMicBtn" type="button" title="Speak into phone (barge-in enabled)" disabled>🎤</button>
+            <input id="phoneInput" placeholder="Speak or type what you say on the call (e.g. 'My reminders are missing')..." maxlength="500" autocomplete="off" aria-label="Caller speech" disabled>
+            <button id="phoneSendBtn" type="submit" class="primary" disabled>Speak Turn</button>
+          </form>
+
+          <!-- Outbound Live Phone Call to Real Mobile Phone -->
+          <div style="background:var(--card); border:1px solid var(--accent); border-radius:10px; padding:12px 14px; margin-top:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <div>
+                <strong style="color:var(--accent-bright);">📱 Call Patient's Real Phone (Twilio Live Call)</strong>
+                <p class="muted" style="margin:2px 0 0; font-size:.82rem;">Places an outbound call to your phone. When answered, SmartPoli speaks and listens live.</p>
+              </div>
+              <div class="row" style="margin-top:0;">
+                <input id="outboundPhoneInput" value="+917307360971" placeholder="+917307360971" style="max-width:180px; padding:6px 10px; font-size:.85rem; border-radius:6px; border:1px solid var(--line);" aria-label="Phone number to call">
+                <button id="callMyPhoneBtn" type="button" class="primary" style="background:var(--accent); font-weight:600;">📞 Call My Phone Now</button>
+              </div>
+            </div>
+            <p id="outboundCallStatus" class="muted" style="margin:6px 0 0; font-size:.82rem;" hidden></p>
+          </div>
+
+          <details style="margin-top:8px;">
+            <summary class="muted" style="cursor:pointer;font-size:.8rem;">TwiML Webhook XML Output (<code>/voice/incoming</code> &amp; <code>/voice/turn</code>)</summary>
+            <pre id="twimlPreview" class="twiml-box">No active call.</pre>
+          </details>
+        </div>
       </div>
 
       <!-- Screen: Schedule -->
@@ -386,17 +471,57 @@
       if (norm === "schedule") refreshSchedule();
       if (norm === "caregiver") refreshCaregiver();
       if (norm === "activity") refreshActivity();
+      if (norm === "phone") renderPhoneQuickChips();
+      if (chatForm) chatForm.hidden = (norm === "phone");
     }
 
     document.querySelectorAll(".tab-btn").forEach(btn => {
       btn.onclick = () => switchScreen(btn.getAttribute("data-screen"));
     });
 
+    let voiceList = [];
+    function loadVoices() {
+      if (!("speechSynthesis" in window)) return;
+      voiceList = window.speechSynthesis.getVoices() || [];
+    }
+    if ("speechSynthesis" in window) {
+      loadVoices();
+      window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function getWarmVoice() {
+      if (!voiceList.length) loadVoices();
+      if (!voiceList.length) return null;
+      // Prioritize natural, neural, and warm assistant voices (Edge Natural / Chrome Neural / US English)
+      const preferred = [
+        /jenny.*natural/i,
+        /aria.*natural/i,
+        /guy.*natural/i,
+        /neural/i,
+        /online.*natural/i,
+        /natural/i,
+        /google us english/i,
+        /google uk english female/i,
+        /samantha/i,
+        /zira/i,
+        /karen/i
+      ];
+      for (const rx of preferred) {
+        const found = voiceList.find(v => rx.test(v.name) && (v.lang.startsWith("en") || !v.lang));
+        if (found) return found;
+      }
+      return voiceList.find(v => v.lang.startsWith("en")) || voiceList[0] || null;
+    }
+
     function speakText(text) {
       if (!voiceEnabled || !("speechSynthesis" in window)) return;
       try {
         window.speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(text);
+        const warmVoice = getWarmVoice();
+        if (warmVoice) u.voice = warmVoice;
+        u.rate = 0.95; // Calmer, warm conversational pace
+        u.pitch = 1.0;
         u.onstart = () => setAvatarState("speaking");
         u.onend = () => setAvatarState("idle");
         window.speechSynthesis.speak(u);
@@ -716,7 +841,277 @@
       rec.start();
     };
 
+    // ------------------------------------------------------------------ Phone Call Voice Agent
+    let activeCallSid = "";
+    let callTimerId = null;
+    let callStartTs = 0;
+    const dialCallBtn = document.getElementById("dialCallBtn");
+    const hangupCallBtn = document.getElementById("hangupCallBtn");
+    const phoneStatusBadge = document.getElementById("phoneStatusBadge");
+    const phoneTimerBadge = document.getElementById("phoneTimerBadge");
+    const phoneLatencyBadge = document.getElementById("phoneLatencyBadge");
+    const phoneWave = document.getElementById("phoneWave");
+    const phoneLog = document.getElementById("phoneLog");
+    const phoneQuickBar = document.getElementById("phoneQuickBar");
+    const phoneForm = document.getElementById("phoneForm");
+    const phoneInput = document.getElementById("phoneInput");
+    const phoneSendBtn = document.getElementById("phoneSendBtn");
+    const phoneMicBtn = document.getElementById("phoneMicBtn");
+    const twimlPreview = document.getElementById("twimlPreview");
+
+    function updateCallTimer() {
+      if (!activeCallSid) return;
+      const sec = Math.max(0, Math.floor((Date.now() - callStartTs) / 1000));
+      const mm = String(Math.floor(sec / 60)).padStart(2, "0");
+      const ss = String(sec % 60).padStart(2, "0");
+      phoneTimerBadge.textContent = `${mm}:${ss}`;
+    }
+
+    function setPhoneControls(inCall) {
+      dialCallBtn.hidden = inCall;
+      hangupCallBtn.hidden = !inCall;
+      phoneInput.disabled = !inCall;
+      phoneSendBtn.disabled = !inCall;
+      phoneMicBtn.disabled = !inCall;
+    }
+
+    function appendPhoneTurn(text, role, extraClass) {
+      const div = document.createElement("div");
+      div.className = "msg " + role + (extraClass ? " " + extraClass : "");
+      div.textContent = (role === "bot" ? "🔊 AI Agent: " : "🗣 Caller: ") + text;
+      phoneLog.appendChild(div);
+      phoneLog.scrollTop = phoneLog.scrollHeight;
+    }
+
+    function speakPhoneReply(text) {
+      if (!("speechSynthesis" in window)) return;
+      try {
+        window.speechSynthesis.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        const warmVoice = getWarmVoice();
+        if (warmVoice) u.voice = warmVoice;
+        u.rate = 0.95; // Warm, natural conversational pacing
+        u.pitch = 1.0;
+        u.onstart = () => {
+          setAvatarState("speaking");
+          phoneWave.classList.add("active");
+        };
+        u.onend = () => {
+          setAvatarState("idle");
+          phoneWave.classList.remove("active");
+        };
+        window.speechSynthesis.speak(u);
+      } catch (_) {}
+    }
+
+    function interruptPhoneSpeech() {
+      if ("speechSynthesis" in window) {
+        try { window.speechSynthesis.cancel(); } catch (_) {}
+      }
+      phoneWave.classList.remove("active");
+    }
+
+    function renderPhoneQuickChips() {
+      if (!phoneQuickBar) return;
+      phoneQuickBar.innerHTML = "";
+      const prompts = [
+        "My reminders are missing",
+        "What about Android?",
+        "No, notifications are already enabled",
+        "Yes, please create a support ticket",
+        "Repeat that please",
+        "I want to talk to a human",
+        "I think I took too many pills"
+      ];
+      prompts.forEach(p => {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "pill";
+        b.textContent = p;
+        b.onclick = () => {
+          if (!activeCallSid) {
+            startPhoneCall().then(() => sendPhoneTurn(p));
+          } else {
+            sendPhoneTurn(p);
+          }
+        };
+        phoneQuickBar.appendChild(b);
+      });
+    }
+
+    async function startPhoneCall() {
+      interruptPhoneSpeech();
+      phoneLog.innerHTML = "";
+      phoneStatusBadge.textContent = "dialing...";
+      phoneStatusBadge.className = "chip busy";
+      setAvatarState("listening");
+      try {
+        const r = await apiFetch("/voice/call/start", "POST", {caller_name: firstName.value.trim() || "Alex"});
+        activeCallSid = r.call_sid;
+        callStartTs = Date.now();
+        if (callTimerId) clearInterval(callTimerId);
+        callTimerId = setInterval(updateCallTimer, 1000);
+        updateCallTimer();
+        setPhoneControls(true);
+        phoneStatusBadge.textContent = "in call";
+        phoneStatusBadge.className = "chip busy";
+        phoneLatencyBadge.textContent = "latency: <1 ms";
+        twimlPreview.textContent = r.twiml || "";
+        appendPhoneTurn(r.reply, "bot");
+        speakPhoneReply(r.reply);
+        phoneInput.focus();
+      } catch (err) {
+        phoneStatusBadge.textContent = "call failed";
+        phoneStatusBadge.className = "chip emergency";
+        chatErr.textContent = err.message;
+      }
+    }
+
+    async function sendPhoneTurn(speechText) {
+      if (!activeCallSid) return;
+      const s = (speechText !== undefined ? speechText : phoneInput.value).trim();
+      interruptPhoneSpeech(); // Barge-in: immediately stop AI speech when caller speaks
+      phoneInput.value = "";
+      if (s) appendPhoneTurn(s, "user");
+      phoneSendBtn.disabled = true;
+      phoneStatusBadge.textContent = "processing...";
+      setAvatarState("thinking");
+      try {
+        const r = await apiFetch("/voice/call/turn", "POST", {call_sid: activeCallSid, speech: s});
+        const extra = r.emergency ? "emergency" : (r.reference ? "ticket" : "");
+        appendPhoneTurn(r.reply, "bot", extra);
+        if (r.latency_ms !== undefined) {
+          phoneLatencyBadge.textContent = `latency: ${Math.round(r.latency_ms)} ms`;
+        }
+        twimlPreview.textContent = r.twiml || "";
+        setAvatarState(r.avatar_state || "speaking");
+        speakPhoneReply(r.reply);
+        if (r.ended || r.emergency) {
+          activeCallSid = "";
+          if (callTimerId) { clearInterval(callTimerId); callTimerId = null; }
+          setPhoneControls(false);
+          phoneStatusBadge.textContent = r.emergency ? "emergency hangup" : "call ended";
+          phoneStatusBadge.className = r.emergency ? "chip emergency" : "chip";
+        } else {
+          phoneStatusBadge.textContent = "in call";
+          phoneStatusBadge.className = "chip busy";
+        }
+      } catch (err) {
+        chatErr.textContent = err.message;
+        phoneStatusBadge.textContent = "error";
+        phoneStatusBadge.className = "chip emergency";
+      } finally {
+        if (activeCallSid) {
+          phoneSendBtn.disabled = false;
+          phoneInput.focus();
+        }
+      }
+    }
+
+    async function endPhoneCall() {
+      interruptPhoneSpeech();
+      if (!activeCallSid) return;
+      const sid = activeCallSid;
+      activeCallSid = "";
+      if (callTimerId) { clearInterval(callTimerId); callTimerId = null; }
+      setPhoneControls(false);
+      try {
+        const r = await apiFetch("/voice/call/end", "POST", {call_sid: sid});
+        appendPhoneTurn(r.reply, "bot");
+        twimlPreview.textContent = r.twiml || "";
+      } catch (_) {}
+      phoneStatusBadge.textContent = "call ended";
+      phoneStatusBadge.className = "chip";
+      setAvatarState("idle");
+    }
+
+    if (dialCallBtn) dialCallBtn.onclick = () => startPhoneCall();
+    if (hangupCallBtn) hangupCallBtn.onclick = () => endPhoneCall();
+    if (phoneForm) {
+      phoneForm.onsubmit = (e) => {
+        e.preventDefault();
+        sendPhoneTurn(phoneInput.value);
+      };
+    }
+    if (phoneInput) {
+      phoneInput.addEventListener("keydown", () => interruptPhoneSpeech());
+    }
+    if (phoneMicBtn) {
+      phoneMicBtn.onclick = () => {
+        interruptPhoneSpeech();
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRec) {
+          chatErr.textContent = "Browser speech recognition is not supported in this window.";
+          return;
+        }
+        const rec = new SpeechRec();
+        rec.lang = "en-US";
+        rec.interimResults = true;
+        setAvatarState("listening");
+        phoneWave.classList.add("active");
+        phoneStatusBadge.textContent = "listening (speak now)...";
+        rec.onresult = (ev) => {
+          let interim = "";
+          let final = "";
+          for (let i = ev.resultIndex; i < ev.results.length; ++i) {
+            if (ev.results[i].isFinal) final += ev.results[i][0].transcript;
+            else interim += ev.results[i][0].transcript;
+          }
+          if (interim) phoneInput.value = interim;
+          if (final) {
+            phoneInput.value = final;
+            phoneWave.classList.remove("active");
+            sendPhoneTurn(final);
+          }
+        };
+        rec.onerror = (ev) => {
+          phoneWave.classList.remove("active");
+          setAvatarState("idle");
+          phoneStatusBadge.textContent = activeCallSid ? "in call" : "on hook";
+          if (ev && ev.error && ev.error !== "no-speech") {
+            chatErr.textContent = "Microphone notice: " + ev.error;
+          }
+        };
+        try {
+          rec.start();
+        } catch (_) {}
+      };
+    }
+
+    const outboundPhoneInput = document.getElementById("outboundPhoneInput");
+    const callMyPhoneBtn = document.getElementById("callMyPhoneBtn");
+    const outboundCallStatus = document.getElementById("outboundCallStatus");
+
+    if (callMyPhoneBtn) {
+      callMyPhoneBtn.onclick = async () => {
+        const num = (outboundPhoneInput.value || "").trim();
+        if (!num) {
+          outboundCallStatus.hidden = false;
+          outboundCallStatus.innerHTML = "<span style='color:var(--danger);'>Please enter your phone number with country code (e.g. +1... or +91...)</span>";
+          outboundPhoneInput.focus();
+          return;
+        }
+        callMyPhoneBtn.disabled = true;
+        outboundCallStatus.hidden = false;
+        outboundCallStatus.textContent = "Initiating outbound call via Twilio to " + num + "...";
+        try {
+          const r = await apiFetch("/voice/call/outbound", "POST", {to_number: num});
+          if (r.ok) {
+            outboundCallStatus.innerHTML = `<span style='color:var(--accent-bright);'>✅ Call queued (Status: ${r.status}, Ref: ${r.reference}). Pick up your phone!</span>`;
+            appendPhoneTurn(`Outbound call placed to ${num}. Status: ${r.status}.`, "bot");
+          } else {
+            outboundCallStatus.innerHTML = `<span style='color:var(--danger);'>⚠️ Call notice: ${r.detail || "Check Twilio credentials"}</span>`;
+          }
+        } catch (err) {
+          outboundCallStatus.innerHTML = `<span style='color:var(--danger);'>⚠️ Error: ${err.message}</span>`;
+        } finally {
+          callMyPhoneBtn.disabled = false;
+        }
+      };
+    }
+
     resetBtn.onclick = () => {
+      if (activeCallSid) endPhoneCall();
       sessionId = "";
       chatCard.hidden = true;
       preCard.hidden = false;

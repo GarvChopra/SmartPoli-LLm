@@ -1,0 +1,1234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1920, height=1080" />
+<title>SmartPoli Care Navigator — Walkthrough Player</title>
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter-tight/400.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter-tight/600.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter-tight/700.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter-tight/800.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter/400.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter/500.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/inter/600.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/jetbrains-mono/400.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/jetbrains-mono/600.css" />
+<link rel="stylesheet" href="../../launch-video/engine/node_modules/@fontsource/instrument-serif/400-italic.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: #0b1815;
+    color: #ecf7f3;
+    font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+  }
+
+  #stage {
+    position: relative;
+    width: 1920px;
+    height: 1080px;
+    background:
+      radial-gradient(ellipse 76% 68% at 56% 44%, rgba(16, 185, 129, 0.10), transparent 64%),
+      radial-gradient(ellipse 45% 45% at 14% 20%, rgba(16, 185, 129, 0.06), transparent 70%),
+      #0b1815;
+    overflow: hidden;
+  }
+
+  /* Subtle dark studio dot grid matching Digital Twin aesthetic */
+  #bg-grid {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(167, 243, 208, 0.09) 1px, transparent 1px);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+
+  /* Left Brand Header */
+  #brand-header {
+    position: absolute;
+    top: 32px;
+    left: 44px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 20;
+  }
+
+  .brand-mark {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.35), inset 0 1px 0 rgba(255,255,255,0.3);
+  }
+
+  .brand-title {
+    font-family: "Inter Tight", "Segoe UI", sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #f4fbf8;
+    line-height: 1.05;
+  }
+
+  .brand-sub {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    color: #6ee7b7;
+    margin-top: 2px;
+    text-transform: uppercase;
+  }
+
+  /* Top-Right Mode Pill */
+  #mode-pill {
+    position: absolute;
+    top: 34px;
+    right: 48px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 16px;
+    border-radius: 999px;
+    background: rgba(12, 30, 25, 0.88);
+    border: 1px solid rgba(16, 185, 129, 0.42);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: #a7f3d0;
+    text-transform: uppercase;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.32);
+    z-index: 20;
+  }
+
+  #mode-pill.urgent {
+    background: rgba(58, 16, 20, 0.88);
+    border-color: rgba(248, 113, 113, 0.65);
+    color: #fecaca;
+  }
+
+  #mode-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 10px #10b981;
+  }
+
+  #mode-pill.urgent #mode-dot {
+    background: #ef4444;
+    box-shadow: 0 0 12px #ef4444;
+  }
+
+  /* Left Vertical Chapter Stepper Rail */
+  #stepper {
+    position: absolute;
+    left: 44px;
+    top: 112px;
+    width: 244px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 15;
+  }
+
+  .step-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(13, 29, 25, 0.56);
+    color: rgba(212, 232, 224, 0.54);
+  }
+
+  .step-item.done {
+    border-color: rgba(16, 185, 129, 0.22);
+    background: rgba(14, 34, 28, 0.72);
+    color: rgba(212, 238, 228, 0.80);
+  }
+
+  .step-item.active {
+    border-color: rgba(16, 185, 129, 0.72);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.20), rgba(10, 32, 26, 0.92));
+    color: #ffffff;
+    box-shadow: 0 10px 26px rgba(16, 185, 129, 0.16);
+  }
+
+  .step-item.active.urgent {
+    border-color: rgba(248, 113, 113, 0.78);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.22), rgba(34, 15, 18, 0.92));
+    box-shadow: 0 10px 26px rgba(239, 68, 68, 0.18);
+  }
+
+  .step-num {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.18);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .step-item.done .step-num {
+    background: rgba(16, 185, 129, 0.22);
+    border-color: #10b981;
+    color: #6ee7b7;
+  }
+
+  .step-item.active .step-num {
+    background: #10b981;
+    border-color: #34d399;
+    color: #062119;
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.65);
+  }
+
+  .step-item.active.urgent .step-num {
+    background: #ef4444;
+    border-color: #fca5a5;
+    color: #fff;
+    box-shadow: 0 0 14px rgba(239, 68, 68, 0.65);
+  }
+
+  .step-label {
+    font-family: "Inter Tight", "Segoe UI", sans-serif;
+    font-size: 14.5px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+
+  .step-meta {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 10.5px;
+    color: rgba(167, 243, 208, 0.56);
+    margin-top: 2px;
+  }
+
+  .step-item.active.urgent .step-meta {
+    color: #fca5a5;
+  }
+
+  /* Left Progress Footer under Stepper */
+  #rail-progress {
+    margin-top: 12px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: rgba(10, 24, 20, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+  }
+
+  .rail-prog-head {
+    display: flex;
+    justify-content: space-between;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    color: #93c5b4;
+    margin-bottom: 8px;
+  }
+
+  .rail-prog-track {
+    width: 100%;
+    height: 5px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+  }
+
+  #rail-prog-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #10b981, #34d399);
+  }
+
+  /* Flat Screen Showcase Frame (Exact 1600:960 aspect ratio -> 1460 x 876) */
+  #screen-shell {
+    position: absolute;
+    left: 356px;
+    top: 82px;
+    width: 1460px;
+    height: 876px;
+    border-radius: 14px;
+    overflow: hidden;
+    background: #0d161b;
+    border: 1px solid rgba(167, 243, 208, 0.18);
+    box-shadow:
+      0 32px 90px rgba(0, 0, 0, 0.62),
+      0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 10;
+  }
+
+  .screen-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  /* Targeted UI Glow Ring inside screen shell */
+  #focus-halo {
+    position: absolute;
+    pointer-events: none;
+    border-radius: 14px;
+    border: 2.5px solid #10b981;
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0.16), 0 0 32px rgba(16, 185, 129, 0.38);
+    opacity: 0;
+    z-index: 14;
+  }
+
+  #focus-halo.urgent {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 6px rgba(239, 68, 68, 0.18), 0 0 32px rgba(239, 68, 68, 0.42);
+  }
+
+  /* Floating Live 2-Voice Speaker Pill in top stage bar (clear of Phone Link controls) */
+  #voice-pill {
+    position: absolute;
+    top: 20px;
+    left: 760px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background: rgba(8, 19, 17, 0.94);
+    border: 1.5px solid rgba(16, 185, 129, 0.55);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.46);
+    opacity: 0;
+    z-index: 20;
+  }
+
+  #voice-pill.caller {
+    border-color: rgba(56, 189, 248, 0.72);
+    background: rgba(9, 22, 34, 0.92);
+  }
+
+  #voice-pill.emergency {
+    border-color: rgba(248, 113, 113, 0.85);
+    background: rgba(42, 13, 17, 0.94);
+  }
+
+  .voice-bars {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    height: 22px;
+  }
+
+  .vbar {
+    width: 3.5px;
+    border-radius: 999px;
+    background: #10b981;
+  }
+
+  #voice-pill.caller .vbar { background: #38bdf8; }
+  #voice-pill.emergency .vbar { background: #f87171; }
+
+  .voice-role {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #6ee7b7;
+  }
+
+  #voice-pill.caller .voice-role { color: #7dd3fc; }
+  #voice-pill.emergency .voice-role { color: #fca5a5; }
+
+  .voice-sub {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #f8fafc;
+    margin-top: 1px;
+  }
+
+  /* Compact Pop Toast near bottom-right inside screen shell */
+  #pop-toast {
+    position: absolute;
+    bottom: 22px;
+    right: 22px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 16px;
+    border-radius: 12px;
+    background: rgba(8, 22, 18, 0.94);
+    border: 1.5px solid rgba(16, 185, 129, 0.65);
+    color: #ecfdf5;
+    font-family: "Inter Tight", sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+    opacity: 0;
+    z-index: 18;
+  }
+
+  #pop-toast.urgent {
+    border-color: rgba(248, 113, 113, 0.78);
+    background: rgba(45, 12, 16, 0.94);
+    color: #fee2e2;
+  }
+
+  /* Floating Digital-Twin Statistics Card during seg 2 */
+  #stats-card {
+    position: absolute;
+    top: 210px;
+    left: 410px;
+    right: auto;
+    width: 372px;
+    padding: 20px 22px;
+    border-radius: 16px;
+    background: rgba(11, 29, 24, 0.95);
+    border: 1.5px solid rgba(16, 185, 129, 0.55);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.56);
+    opacity: 0;
+    z-index: 22;
+  }
+
+  .stats-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #34d399;
+    margin-bottom: 12px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-cell {
+    padding: 11px 12px;
+    border-radius: 11px;
+    background: rgba(16, 185, 129, 0.08);
+    border: 1px solid rgba(16, 185, 129, 0.24);
+  }
+
+  .stat-val {
+    font-family: "Inter Tight", sans-serif;
+    font-size: 23px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+  }
+
+  .stat-lbl {
+    font-family: "Inter", sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    color: #a7f3d0;
+    margin-top: 2px;
+  }
+
+  /* Animated Mouse Cursor + Red Click Ripples */
+  #cursor-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 30;
+  }
+
+  #mouse-cursor {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 30px;
+    height: 36px;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+    opacity: 0;
+    transform-origin: 3px 3px;
+  }
+
+  .click-ripple {
+    position: absolute;
+    border-radius: 50%;
+    border: 3px solid #ef4444;
+    background: rgba(239, 68, 68, 0.14);
+    box-shadow: 0 0 18px rgba(239, 68, 68, 0.45);
+    opacity: 0;
+    transform: translate(-50%, -50%);
+  }
+
+  /* Bottom Subtitle Pill Bar */
+  #subtitle-wrap {
+    position: absolute;
+    left: 300px;
+    right: 60px;
+    bottom: 18px;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 35;
+  }
+
+  #subtitle-pill {
+    max-width: 1320px;
+    padding: 14px 28px;
+    border-radius: 14px;
+    background: rgba(7, 15, 13, 0.90);
+    border: 1px solid rgba(167, 243, 208, 0.20);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.55);
+    font-family: "Inter", "Segoe UI", sans-serif;
+    font-size: 21px;
+    font-weight: 500;
+    line-height: 1.38;
+    color: #f4fbf8;
+    text-align: center;
+    letter-spacing: -0.005em;
+  }
+
+  .sub-tag {
+    display: inline-block;
+    padding: 2px 10px;
+    margin-right: 10px;
+    border-radius: 999px;
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    vertical-align: 2px;
+  }
+
+  .sub-tag.caller {
+    background: rgba(56, 189, 248, 0.22);
+    border: 1px solid rgba(56, 189, 248, 0.65);
+    color: #7dd3fc;
+  }
+
+  .sub-tag.agent {
+    background: rgba(16, 185, 129, 0.22);
+    border: 1px solid rgba(16, 185, 129, 0.68);
+    color: #6ee7b7;
+  }
+
+  .sub-tag.emergency {
+    background: rgba(239, 68, 68, 0.24);
+    border: 1px solid rgba(248, 113, 113, 0.72);
+    color: #fecaca;
+  }
+
+  /* Brief Intro Card (0.0s .. 2.2s) */
+  #intro-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse 68% 62% at 50% 48%, rgba(16, 185, 129, 0.15), transparent 68%),
+      #0b1815;
+    z-index: 32;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .intro-badge {
+    width: 84px;
+    height: 84px;
+    border-radius: 22px;
+    background: linear-gradient(145deg, #10b981, #059669);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 20px 60px rgba(16, 185, 129, 0.42), inset 0 1px 0 rgba(255,255,255,0.35);
+    margin-bottom: 26px;
+  }
+
+  .intro-eyebrow {
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.20em;
+    text-transform: uppercase;
+    color: #6ee7b7;
+    margin-bottom: 14px;
+  }
+
+  .intro-h1 {
+    font-family: "Inter Tight", "Segoe UI", sans-serif;
+    font-size: 68px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.05;
+  }
+
+  .intro-h1 em {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #6ee7b7;
+  }
+
+  .intro-chips {
+    display: flex;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .intro-chip {
+    padding: 9px 18px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.11);
+    border: 1px solid rgba(16, 185, 129, 0.38);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #d1fae5;
+  }
+
+  /* Outro Clinical Safety & Stats Card (52.66s .. 58.325s) */
+  #outro-card {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 45%, rgba(16, 185, 129, 0.14), transparent 70%),
+      #0b1815;
+    z-index: 32;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .outro-eyebrow {
+    padding: 7px 16px;
+    border-radius: 999px;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+    background: rgba(16, 185, 129, 0.12);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.16em;
+    color: #6ee7b7;
+    text-transform: uppercase;
+    margin-bottom: 22px;
+  }
+
+  .outro-title {
+    font-family: "Inter Tight", "Segoe UI", sans-serif;
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: #ffffff;
+    text-align: center;
+    line-height: 1.08;
+    margin-bottom: 34px;
+  }
+
+  .outro-title em {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    color: #6ee7b7;
+  }
+
+  .outro-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 290px);
+    gap: 18px;
+    margin-bottom: 34px;
+  }
+
+  .outro-kpi {
+    padding: 22px 22px;
+    border-radius: 16px;
+    background: rgba(12, 31, 26, 0.88);
+    border: 1.5px solid rgba(16, 185, 129, 0.44);
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.36);
+  }
+
+  .outro-kpi-val {
+    font-family: "Inter Tight", sans-serif;
+    font-size: 38px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.02em;
+  }
+
+  .outro-kpi-lbl {
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #a7f3d0;
+    margin-top: 6px;
+    line-height: 1.3;
+  }
+
+  .outro-foot {
+    padding: 12px 24px;
+    border-radius: 999px;
+    background: rgba(239, 68, 68, 0.14);
+    border: 1px solid rgba(248, 113, 113, 0.55);
+    font-family: "Inter Tight", sans-serif;
+    font-size: 17px;
+    font-weight: 600;
+    color: #fecaca;
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg-grid"></div>
+
+  <div id="brand-header">
+    <div class="brand-mark">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M12 4V20M4 12H20" stroke="#062119" stroke-width="3.4" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="brand-title">SmartPoli</div>
+      <div class="brand-sub">Care Navigator</div>
+    </div>
+  </div>
+
+  <div id="mode-pill">
+    <span id="mode-dot"></span>
+    <span id="mode-text">CARE NAVIGATOR</span>
+  </div>
+
+  <div id="voice-pill">
+    <div class="voice-bars" id="voice-bars">
+      <span class="vbar"></span><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span><span class="vbar"></span>
+    </div>
+    <div>
+      <div class="voice-role" id="voice-role">CALLER</div>
+      <div class="voice-sub" id="voice-sub">Speaking</div>
+    </div>
+  </div>
+
+  <div id="stepper"></div>
+
+  <div id="screen-shell">
+    <img id="img-dt_hover_0_avatar" class="screen-img" src="./assets/dt/dt_hover_0_avatar.png" alt="Hovering Avatar" />
+    <img id="img-dt_chat_welcome" class="screen-img" src="./assets/dt/dt_chat_welcome.png" alt="Welcome" />
+    <img id="img-dt_chat_kb" class="screen-img" src="./assets/dt/dt_chat_kb.png" alt="Grounded KB" />
+    <img id="img-dt_chat_workflow" class="screen-img" src="./assets/dt/dt_chat_workflow.png" alt="Guided Workflow" />
+    <img id="img-dt_voice_1_dial" class="screen-img" src="./assets/dt/dt_voice_1_dial.png" alt="Voice Dial" />
+    <img id="img-dt_voice_2_bp" class="screen-img" src="./assets/dt/dt_voice_2_bp.png" alt="Voice BP" />
+    <img id="img-dt_voice_3_urgent" class="screen-img" src="./assets/dt/dt_voice_3_urgent.png" alt="Voice Urgent" />
+    <img id="img-dt_whatsapp_1_bp" class="screen-img" src="./assets/dt/dt_whatsapp_1_bp.png" alt="WhatsApp BP" />
+    <img id="img-dt_whatsapp_2_ticket" class="screen-img" src="./assets/dt/dt_whatsapp_2_ticket.png" alt="WhatsApp Ticket" />
+    <img id="img-dt_ticket_portal" class="screen-img" src="./assets/dt/dt_ticket_portal.png" alt="Ticket Portal" />
+
+    <div id="focus-halo"></div>
+
+    <div id="pop-toast">
+      <span id="pop-icon">✓</span>
+      <span id="pop-text">Verified</span>
+    </div>
+  </div>
+
+  <div id="stats-card">
+    <div class="stats-eyebrow">Checked Across 4 Clinical Workflows</div>
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="stat-val">&le; 5 min</div>
+        <div class="stat-lbl">Reminder window policy</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">0</div>
+        <div class="stat-lbl">Unsafe dosing guesses</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">4 / 4</div>
+        <div class="stat-lbl">Grounded guided flows</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">&lt; 2 sec</div>
+        <div class="stat-lbl">Urgent ticket + WhatsApp</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cursor-layer">
+    <div id="ripple-0" class="click-ripple"></div>
+    <div id="ripple-1" class="click-ripple"></div>
+    <svg id="mouse-cursor" viewBox="0 0 28 34" fill="none">
+      <path d="M3 2L3 26L9.5 20L14.5 31L18.5 29.2L13.5 18.2L22.5 18.2L3 2Z"
+            fill="#ffffff" stroke="#091512" stroke-width="2.2" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <div id="subtitle-wrap">
+    <div id="subtitle-pill"></div>
+  </div>
+
+  <div id="intro-card">
+    <div class="intro-badge">
+      <svg width="42" height="42" viewBox="0 0 24 24" fill="none">
+        <path d="M12 4V20M4 12H20" stroke="#062119" stroke-width="3.2" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="intro-eyebrow">SmartPoli · Healthcare Companion</div>
+    <div class="intro-h1">SmartPoli <em>Care Navigator</em></div>
+    <div class="intro-chips">
+      <span class="intro-chip">Hovering Desktop Avatar</span>
+      <span class="intro-chip">2-Way AI Voice Triage</span>
+      <span class="intro-chip">WhatsApp + Ticket Portal</span>
+    </div>
+  </div>
+
+  <div id="outro-card">
+    <div class="outro-eyebrow">Clinical Triage &amp; Reliability</div>
+    <div class="outro-title">Grounded care navigation,<br/><em>not a medical diagnosis.</em></div>
+    <div class="outro-kpis">
+      <div class="outro-kpi">
+        <div class="outro-kpi-val">&le; 5 min</div>
+        <div class="outro-kpi-lbl">Verified medication reminder timing policy</div>
+      </div>
+      <div class="outro-kpi">
+        <div class="outro-kpi-val">0 Guesses</div>
+        <div class="outro-kpi-lbl">Abstains strictly on unverified dosing queries</div>
+      </div>
+      <div class="outro-kpi">
+        <div class="outro-kpi-val">#SP-1042</div>
+        <div class="outro-kpi-lbl">Instant WhatsApp Web card &amp; live ticket portal</div>
+      </div>
+      <div class="outro-kpi">
+        <div class="outro-kpi-val">2-Channel</div>
+        <div class="outro-kpi-lbl">Real-time Voice Agent + caregiver escalation</div>
+      </div>
+    </div>
+    <div class="outro-foot">Emergency symptoms immediately instruct patients to call 112 / 911 and alert caregivers</div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const FRAME = { left: 356, top: 82, width: 1460, height: 876 };
+
+  const clamp01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  const smooth = (a, b, t) => {
+    const x = clamp01((t - a) / Math.max(1e-6, b - a));
+    return x * x * (3 - 2 * x);
+  };
+  const lerp = (a, b, u) => a + (b - a) * u;
+
+  const CHAPTERS = [
+    { id: "intro",          num: "01", label: "Hovering Avatar",   meta: "Desktop Companion" },
+    { id: "kb",             num: "02", label: "Touch & Talk",      meta: "Policy + Abstention" },
+    { id: "workflow_stats", num: "03", label: "Calls Your Phone",  meta: "Unwell Escalation" },
+    { id: "voice_bp",       num: "04", label: "Phone Link · Call", meta: "Accept & BP Guide" },
+    { id: "voice_urgent",   num: "05", label: "Urgent Triage",     meta: "Ticket #SP-1042" },
+    { id: "whatsapp",       num: "06", label: "WhatsApp Web",      meta: "Rich Alert Cards" },
+    { id: "portal",         num: "07", label: "Ticket Portal",     meta: "/ticket/SP-1042" },
+  ];
+
+  // Keyframe waypoints in normalized [0..1] inside FRAME
+  const CURSOR_KEYS = [
+    { t: 0.00,   x: 0.7200, y: 0.8800, vis: 0 },
+    { t: 1.25,   x: 0.7600, y: 0.8600, vis: 1 },
+    { t: 2.35,   x: 0.9031, y: 0.8427, vis: 1 }, // #hoverAvatarBtn before 2.55s click
+    { t: 2.75,   x: 0.9031, y: 0.8427, vis: 1 },
+    { t: 4.10,   x: 0.6625, y: 0.3400, vis: 1 }, // Inspect companion reminder
+    { t: 5.10,   x: 0.5181, y: 0.7448, vis: 1 }, // #micBtn before 5.265s click to talk
+    { t: 5.50,   x: 0.5181, y: 0.7448, vis: 1 },
+    { t: 7.40,   x: 0.6536, y: 0.4282, vis: 1 }, // #lastBotMsg grounded KB reply
+    { t: 9.80,   x: 0.6536, y: 0.4282, vis: 1 },
+    { t: 10.80,  x: 0.6762, y: 0.6932, vis: 1 }, // #unwellChip before 10.99s click
+    { t: 11.25,  x: 0.6762, y: 0.6932, vis: 1 },
+    { t: 12.60,  x: 0.6625, y: 0.4512, vis: 1 }, // #callTriggerCard outbound call initiated
+    { t: 15.60,  x: 0.6625, y: 0.4512, vis: 1 },
+    { t: 16.95,  x: 0.8363, y: 0.1380, vis: 1 }, // #dialCallBtn (Accept Call) on Phone Link step 1 before 17.19s click
+    { t: 17.45,  x: 0.8363, y: 0.1380, vis: 1 },
+    { t: 19.50,  x: 0.3478, y: 0.1667, vis: 1 }, // #phoneStatusBadge (In Call) on Phone Link step 2
+    { t: 23.00,  x: 0.5200, y: 0.5000, vis: 1 }, // AI Agent BP transcript bubble on Phone Link step 2
+    { t: 29.00,  x: 0.5200, y: 0.5000, vis: 1 },
+    { t: 31.80,  x: 0.7400, y: 0.5550, vis: 1 }, // Caller chest pain turn on Phone Link step 3
+    { t: 35.50,  x: 0.5422, y: 0.6546, vis: 1 }, // .msg.bot.emergency on Phone Link step 3
+    { t: 41.80,  x: 0.5422, y: 0.6546, vis: 1 },
+    { t: 42.60,  x: 0.4928, y: 0.2656, vis: 1 }, // WhatsApp BP bubble
+    { t: 44.95,  x: 0.4928, y: 0.5223, vis: 1 }, // WhatsApp Ticket #SP-1042 bubble
+    { t: 46.80,  x: 0.4359, y: 0.6317, vis: 1 }, // #ticketPortalLink blue URL before 48.125s click
+    { t: 48.30,  x: 0.4359, y: 0.6317, vis: 1 },
+    { t: 50.20,  x: 0.4134, y: 0.8211, vis: 1 }, // .btn-wa on ticket portal
+    { t: 52.00,  x: 0.5000, y: 0.7691, vis: 1 }, // .btn-emergency on ticket portal
+    { t: 52.85,  x: 0.5000, y: 0.7691, vis: 0 },
+  ];
+
+  let DATA = null;
+  const SCREENS = {};
+  const STEP_ELS = {};
+  let EL = {};
+
+  function buildStepperDOM() {
+    const stepper = document.getElementById("stepper");
+    stepper.innerHTML = "";
+    for (const ch of CHAPTERS) {
+      const div = document.createElement("div");
+      div.className = "step-item";
+      div.innerHTML =
+        `<div class="step-num">${ch.num}</div>` +
+        `<div><div class="step-label">${ch.label}</div><div class="step-meta">${ch.meta}</div></div>`;
+      stepper.appendChild(div);
+      STEP_ELS[ch.id] = div;
+    }
+    const prog = document.createElement("div");
+    prog.id = "rail-progress";
+    prog.innerHTML =
+      `<div class="rail-prog-head"><span>DEMO TIMELINE</span><span id="rail-time">00:00 / 00:58</span></div>` +
+      `<div class="rail-prog-track"><div id="rail-prog-fill"></div></div>`;
+    stepper.appendChild(prog);
+  }
+
+  function evalCursor(t) {
+    let a = CURSOR_KEYS[0];
+    let b = CURSOR_KEYS[CURSOR_KEYS.length - 1];
+    for (let i = 0; i < CURSOR_KEYS.length - 1; i++) {
+      if (t >= CURSOR_KEYS[i].t && t <= CURSOR_KEYS[i + 1].t) {
+        a = CURSOR_KEYS[i];
+        b = CURSOR_KEYS[i + 1];
+        break;
+      }
+    }
+    const u = smooth(a.t, b.t, t);
+    return {
+      x: lerp(a.x, b.x, u),
+      y: lerp(a.y, b.y, u),
+      vis: lerp(a.vis, b.vis, u),
+    };
+  }
+
+  function setScreenWeights(weights) {
+    for (const [id, el] of Object.entries(SCREENS)) {
+      el.style.opacity = String(weights[id] || 0);
+    }
+  }
+
+  function renderClickRipples(t) {
+    const clicks = (DATA.sfx_events || []).filter((e) => e.name === "click");
+    const activeClicks = [];
+    for (const c of clicks) {
+      const dt = t - c.at;
+      if (dt >= 0 && dt <= 0.65) {
+        activeClicks.push({ at: c.at, dt });
+      }
+    }
+    for (let i = 0; i < 2; i++) {
+      const el = EL["ripple" + i];
+      if (!activeClicks[i]) {
+        el.style.opacity = "0";
+        continue;
+      }
+      const { at, dt } = activeClicks[i];
+      const pos = evalCursor(at);
+      const px = FRAME.left + pos.x * FRAME.width;
+      const py = FRAME.top + pos.y * FRAME.height;
+      const u = clamp01(dt / 0.65);
+      const size = 14 + 54 * (1 - Math.pow(1 - u, 2.2));
+      const alpha = (1 - u) * 0.92;
+      el.style.left = px + "px";
+      el.style.top = py + "px";
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      el.style.opacity = alpha.toFixed(3);
+    }
+  }
+
+  function formatSec(s) {
+    const n = Math.max(0, Math.floor(s));
+    const mm = String(Math.floor(n / 60)).padStart(2, "0");
+    const ss = String(n % 60).padStart(2, "0");
+    return mm + ":" + ss;
+  }
+
+  window.__load = async ({ timeline }) => {
+    DATA = timeline;
+    buildStepperDOM();
+    const ids = [
+      "dt_hover_0_avatar",
+      "dt_chat_welcome", "dt_chat_kb", "dt_chat_workflow",
+      "dt_voice_1_dial", "dt_voice_2_bp", "dt_voice_3_urgent",
+      "dt_whatsapp_1_bp", "dt_whatsapp_2_ticket", "dt_ticket_portal"
+    ];
+    for (const id of ids) {
+      SCREENS[id] = document.getElementById("img-" + id);
+    }
+    EL = {
+      introCard: document.getElementById("intro-card"),
+      outroCard: document.getElementById("outro-card"),
+      stepper: document.getElementById("stepper"),
+      screenShell: document.getElementById("screen-shell"),
+      modePill: document.getElementById("mode-pill"),
+      modeText: document.getElementById("mode-text"),
+      railTime: document.getElementById("rail-time"),
+      railFill: document.getElementById("rail-prog-fill"),
+      focusHalo: document.getElementById("focus-halo"),
+      voicePill: document.getElementById("voice-pill"),
+      voiceRole: document.getElementById("voice-role"),
+      voiceSub: document.getElementById("voice-sub"),
+      voiceBars: Array.from(document.querySelectorAll("#voice-bars .vbar")),
+      popToast: document.getElementById("pop-toast"),
+      popIcon: document.getElementById("pop-icon"),
+      popText: document.getElementById("pop-text"),
+      statsCard: document.getElementById("stats-card"),
+      cursor: document.getElementById("mouse-cursor"),
+      ripple0: document.getElementById("ripple-0"),
+      ripple1: document.getElementById("ripple-1"),
+      subtitlePill: document.getElementById("subtitle-pill"),
+    };
+
+    await document.fonts.ready;
+    await Promise.all(
+      Object.values(SCREENS).map((img) =>
+        img.complete ? (img.decode ? img.decode().catch(() => {}) : Promise.resolve())
+                     : new Promise((res) => { img.onload = res; img.onerror = res; })
+      )
+    );
+    window.__seek(0);
+    return { duration: DATA.duration, loaded: Object.keys(SCREENS).length };
+  };
+
+  window.__seek = (t) => {
+    if (!DATA) return;
+    const segs = DATA.segments;
+    const total = DATA.duration || 58.690;
+
+    // 1. Intro Card (0..1.40s) & Outro Card (52.95s..end)
+    const introOpacity = 1 - smooth(1.00, 1.40, t);
+    const outroOpacity = smooth(52.95, 53.35, t);
+    EL.introCard.style.opacity = introOpacity.toFixed(3);
+    EL.outroCard.style.opacity = outroOpacity.toFixed(3);
+
+    const walkVis = clamp01(smooth(0.95, 1.35, t) * (1 - smooth(52.90, 53.30, t)));
+    EL.stepper.style.opacity = walkVis.toFixed(3);
+    EL.screenShell.style.opacity = walkVis.toFixed(3);
+
+    // 2. Active segment
+    let segIdx = 0;
+    for (let i = 0; i < segs.length; i++) {
+      if (t >= segs[i].start && t < segs[i].end) { segIdx = i; break; }
+      if (t >= segs[segs.length - 1].start) segIdx = segs.length - 1;
+    }
+    const activeSeg = segs[segIdx];
+
+    // Stepper state
+    CHAPTERS.forEach((ch, idx) => {
+      const el = STEP_ELS[ch.id];
+      const seg = segs[idx];
+      const isDone = t >= seg.end;
+      const isAct = activeSeg.id === ch.id;
+      const isUrgent = ch.id === "voice_urgent" && isAct && t >= 33.15;
+      el.className = "step-item" + (isDone ? " done" : "") + (isAct ? " active" : "") + (isUrgent ? " urgent" : "");
+    });
+
+    // Top-right Mode Pill & Progress Bar
+    const urgentMode = (activeSeg.id === "voice_urgent" && t >= 33.15) || (activeSeg.id === "portal");
+    EL.modePill.className = urgentMode && activeSeg.id === "voice_urgent" ? "urgent" : "";
+    EL.modeText.textContent = activeSeg.badge.toUpperCase();
+    EL.railTime.textContent = formatSec(t) + " / " + formatSec(total);
+    EL.railFill.style.width = (clamp01(t / total) * 100).toFixed(2) + "%";
+
+    // 3. Crossfade between the 10 crisp Digital-Twin screenshots
+    const wOpen   = smooth(2.55, 2.78, t);    // click@2.55s on #hoverAvatarBtn -> opens companion
+    const wKB     = smooth(5.265, 5.48, t);   // click@5.265s on #micBtn -> talk KB Q&A
+    const wWork   = smooth(10.99, 11.20, t);  // click@10.99s on #unwellChip -> triggers outbound call
+    const wDial   = smooth(15.96, 16.18, t);  // 16.04s seg 3 start -> Phone Link Incoming Call ringing
+    const wBp     = smooth(17.19, 17.42, t);  // click@17.19s on #dialCallBtn (Accept Call) -> Active Call
+    const wUrg    = smooth(32.85, 33.12, t);  // 33.32s urgent agent escalation
+    const wWa1    = smooth(42.26, 42.48, t);  // 42.32s seg 5 WhatsApp Web BP card
+    const wWa2    = smooth(44.65, 44.90, t);  // WhatsApp Web Urgent Ticket #SP-1042 card
+    const wPortal = smooth(48.125, 48.35, t); // click@48.125s on #ticketPortalLink -> /ticket/SP-1042
+
+    setScreenWeights({
+      dt_hover_0_avatar:    (1 - wOpen),
+      dt_chat_welcome:      wOpen * (1 - wKB),
+      dt_chat_kb:           wKB * (1 - wWork),
+      dt_chat_workflow:     wWork * (1 - wDial),
+      dt_voice_1_dial:      wDial * (1 - wBp),
+      dt_voice_2_bp:        wBp * (1 - wUrg),
+      dt_voice_3_urgent:    wUrg * (1 - wWa1),
+      dt_whatsapp_1_bp:     wWa1 * (1 - wWa2),
+      dt_whatsapp_2_ticket: wWa2 * (1 - wPortal),
+      dt_ticket_portal:     wPortal,
+    });
+
+    // 4. Floating Stats Card during seg 2 (workflow_stats: pops at 12.64s -> leaves at 15.98s)
+    const statsIn = smooth(12.60, 12.88, t);
+    const statsOut = 1 - smooth(15.65, 15.98, t);
+    const statsOp = statsIn * statsOut;
+    EL.statsCard.style.opacity = statsOp.toFixed(3);
+    EL.statsCard.style.transform = `translateY(${((1 - statsIn) * 14).toFixed(1)}px)`;
+
+    // 5. Targeted Highlight Halo inside screen frame
+    let halo = { op: 0, x: 0, y: 0, w: 0, h: 0, urg: false };
+    if (t >= 1.45 && t <= 2.52) {
+      const op = smooth(1.45, 1.65, t) * (1 - smooth(2.38, 2.52, t));
+      halo = { op, x: 0.858, y: 0.770, w: 0.090, h: 0.145, urg: false };
+    } else if (t >= 7.20 && t <= 10.65) {
+      const op = smooth(7.20, 7.45, t) * (1 - smooth(10.35, 10.65, t));
+      halo = { op, x: 0.510, y: 0.377, w: 0.287, h: 0.102, urg: false };
+    } else if (t >= 11.55 && t <= 15.65) {
+      const op = smooth(11.55, 11.82, t) * (1 - smooth(15.35, 15.65, t));
+      halo = { op, x: 0.510, y: 0.377, w: 0.305, h: 0.148, urg: false };
+    } else if (t >= 16.22 && t <= 17.16) {
+      const op = smooth(16.22, 16.40, t) * (1 - smooth(17.04, 17.16, t));
+      halo = { op, x: 0.785, y: 0.098, w: 0.102, h: 0.080, urg: false };
+    } else if (t >= 34.20 && t <= 42.10) {
+      const op = smooth(34.20, 34.50, t) * (1 - smooth(41.80, 42.10, t));
+      halo = { op, x: 0.245, y: 0.605, w: 0.594, h: 0.098, urg: true };
+    } else if (t >= 45.30 && t <= 48.10) {
+      const op = smooth(45.30, 45.55, t) * (1 - smooth(47.92, 48.10, t));
+      halo = { op, x: 0.324, y: 0.611, w: 0.224, h: 0.041, urg: false };
+    }
+    EL.focusHalo.style.opacity = halo.op.toFixed(3);
+    EL.focusHalo.className = halo.urg ? "urgent" : "";
+    if (halo.op > 0) {
+      EL.focusHalo.style.left = (halo.x * FRAME.width) + "px";
+      EL.focusHalo.style.top = (halo.y * FRAME.height) + "px";
+      EL.focusHalo.style.width = (halo.w * FRAME.width) + "px";
+      EL.focusHalo.style.height = (halo.h * FRAME.height) + "px";
+    }
+
+    // 6. Live 2-Voice Speaker Pill during Voice Segments (segs 3 & 4)
+    let vpOp = 0, vpMode = "agent", vpRole = "", vpSub = "";
+    const turns = [...segs[3].turns, ...segs[4].turns];
+    const inVoice = t >= segs[3].start && t < segs[4].end;
+    if (inVoice) {
+      let curTurn = null;
+      for (const tu of turns) {
+        if (t >= tu.start - 0.08 && t <= tu.end + 0.12) { curTurn = tu; break; }
+      }
+      if (curTurn) {
+        vpOp = 1;
+        if (curTurn.speaker === "caller") {
+          vpMode = t >= 29.51 ? "caller emergency" : "caller";
+          vpRole = t >= 29.51 ? "PATIENT CALLER · URGENT" : "PATIENT CALLER · DAVID";
+          vpSub = t >= 29.51 ? "Reporting chest pain & palpitations" : "Asking BP check & WhatsApp guide";
+        } else {
+          vpMode = t >= 33.20 ? "emergency" : "agent";
+          vpRole = t >= 33.20 ? "SMARTPOLI AI VOICE AGENT · TRIAGE" : "SMARTPOLI AI VOICE AGENT";
+          vpSub = t >= 33.20 ? "Calling 112/911 · Sending Ticket SP-1042" : "Giving grounded BP steps + WhatsApp";
+        }
+      }
+    }
+    EL.voicePill.style.opacity = vpOp.toFixed(3);
+    EL.voicePill.className = vpMode;
+    EL.voiceRole.textContent = vpRole;
+    EL.voiceSub.textContent = vpSub;
+    if (vpOp > 0) {
+      EL.voiceBars.forEach((bar, i) => {
+        const h = 7 + 13 * Math.abs(Math.sin(t * 11.5 + i * 1.15));
+        bar.style.height = h.toFixed(1) + "px";
+      });
+    }
+
+    // 7. Timed Pop Toasts aligned cleanly to sfx_events pops
+    let toast = { op: 0, icon: "✓", text: "", urg: false };
+    if (t >= 8.95 && t <= 10.75) {
+      toast = {
+        op: smooth(8.95, 9.15, t) * (1 - smooth(10.45, 10.75, t)),
+        icon: "✓", text: "Verified Policy Cited · Dosing Guardrail Active", urg: false
+      };
+    } else if (t >= 12.55 && t <= 15.70) {
+      toast = {
+        op: smooth(12.55, 12.78, t) * (1 - smooth(15.35, 15.70, t)),
+        icon: "✓", text: "Outbound Care Call Triggered -> Windows Phone Link", urg: false
+      };
+    } else if (t >= 29.15 && t <= 31.20) {
+      toast = {
+        op: smooth(29.15, 29.35, t) * (1 - smooth(30.85, 31.20, t)),
+        icon: "✓", text: "Blood Pressure Checklist Queued for WhatsApp", urg: false
+      };
+    } else if (t >= 37.15 && t <= 42.15) {
+      toast = {
+        op: smooth(37.15, 37.35, t) * (1 - smooth(41.85, 42.15, t)),
+        icon: "!", text: "Ticket #SP-1042 Logged · Dispatched to WhatsApp", urg: true
+      };
+    } else if (t >= 42.35 && t <= 44.55) {
+      toast = {
+        op: smooth(42.35, 42.55, t) * (1 - smooth(44.25, 44.55, t)),
+        icon: "✓", text: "WhatsApp Delivered · Blood Pressure Check Card", urg: false
+      };
+    } else if (t >= 49.20 && t <= 52.80) {
+      toast = {
+        op: smooth(49.20, 49.45, t) * (1 - smooth(52.50, 52.80, t)),
+        icon: "✓", text: "Ticket #SP-1042 Live · WhatsApp & Caregiver Confirmed", urg: false
+      };
+    }
+    EL.popToast.style.opacity = toast.op.toFixed(3);
+    EL.popToast.className = toast.urg ? "urgent" : "";
+    EL.popIcon.textContent = toast.icon;
+    EL.popText.textContent = toast.text;
+
+    // 8. Cursor + Red Click Ripples
+    const cur = evalCursor(t);
+    const cx = FRAME.left + cur.x * FRAME.width;
+    const cy = FRAME.top + cur.y * FRAME.height;
+    let pressScale = 1;
+    for (const c of (DATA.sfx_events || []).filter((e) => e.name === "click")) {
+      const dt = t - c.at;
+      if (dt >= -0.06 && dt <= 0.14) {
+        pressScale = 0.86;
+      }
+    }
+    EL.cursor.style.opacity = (cur.vis * walkVis).toFixed(3);
+    EL.cursor.style.transform = `translate(${cx.toFixed(1)}px, ${cy.toFixed(1)}px) scale(${pressScale})`;
+    renderClickRipples(t);
+
+    // 9. Exact Synchronized Subtitle Pill (matches active spoken turn or segment!)
+    let subHtml = "";
+    let showSub = false;
+    if (activeSeg.id === "intro") {
+      showSub = t >= 0.15 && t <= 5.05;
+      subHtml = activeSeg.subtitle;
+    } else if (activeSeg.id === "voice_bp" || activeSeg.id === "voice_urgent") {
+      showSub = true;
+      const t0 = activeSeg.turns[0];
+      const t1 = activeSeg.turns[1];
+      if (t < t1.start - 0.08) {
+        const cls = activeSeg.id === "voice_urgent" ? "caller" : "caller";
+        subHtml = `<span class="sub-tag ${cls}">Patient Caller</span>${t0.text}`;
+      } else {
+        const cls = activeSeg.id === "voice_urgent" ? "emergency" : "agent";
+        const lbl = activeSeg.id === "voice_urgent" ? "SmartPoli Agent · Urgent" : "SmartPoli Agent";
+        subHtml = `<span class="sub-tag ${cls}">${lbl}</span>${t1.text}`;
+      }
+    } else if (activeSeg.id === "outro") {
+      showSub = t <= 58.10;
+      subHtml = activeSeg.subtitle;
+    } else {
+      showSub = true;
+      subHtml = activeSeg.subtitle;
+    }
+    EL.subtitlePill.style.opacity = showSub ? "1" : "0";
+    EL.subtitlePill.innerHTML = subHtml;
+  };
+})();
+</script>
+</body>
+</html>

@@ -22,7 +22,7 @@ from typing import Callable
 
 from r2.care_meds import CareError, CareStore
 
-VALID_SCREENS = ("chat", "schedule", "reminders", "troubleshooting", "caregiver", "activity")
+VALID_SCREENS = ("chat", "schedule", "reminders", "troubleshooting", "caregiver", "activity", "phone")
 _SCREEN_ALIASES = {
     "meds": "schedule",
     "medication": "schedule",
@@ -48,6 +48,9 @@ _SCREEN_ALIASES = {
     "logs": "activity",
     "home": "chat",
     "conversation": "chat",
+    "call": "phone",
+    "voice": "phone",
+    "dialer": "phone",
 }
 
 TRUSTED_RESOURCES: list[dict] = [

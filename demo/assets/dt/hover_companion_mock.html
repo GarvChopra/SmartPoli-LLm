@@ -1,0 +1,810 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=1600, height=960" />
+  <title>SmartPoli Companion — Hovering Desktop Avatar</title>
+  <style>
+    :root {
+      --bg: #0d171c;
+      --panel: #122128;
+      --card: #172b34;
+      --card-alt: #1b333e;
+      --border: #22424f;
+      --text: #f0fdfa;
+      --muted: #94a3b8;
+      --accent: #0d9488;
+      --accent-bright: #14b8a6;
+      --warn-bg: #3b2106;
+      --warn-fg: #fde68a;
+      --danger-bg: #581c1c;
+      --ok-bg: #065f46;
+      --ok-fg: #a7f3d0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      width: 1600px;
+      height: 960px;
+      overflow: hidden;
+      font-family: "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Windows 11 Coastal Desktop Wallpaper */
+    .desktop {
+      position: relative;
+      width: 1600px;
+      height: 960px;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 42%, rgba(255, 245, 214, 0.95) 0%, rgba(254, 226, 178, 0.55) 7%, rgba(169, 207, 224, 0.30) 20%, transparent 45%),
+        linear-gradient(180deg,
+          #7eb3d5 0%,
+          #a9cde2 24%,
+          #d7e5ea 42%,
+          #eef1e9 49%,
+          #669eb1 50.5%,
+          #3c7b8f 68%,
+          #255c70 86%,
+          #194455 100%
+        );
+    }
+
+    /* Coastal Hills & Grass Bank matching the user's Windows wallpaper */
+    .horizon-hills {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 340px;
+      height: 150px;
+      pointer-events: none;
+    }
+
+    .grass-bank {
+      position: absolute;
+      right: -40px;
+      bottom: 44px;
+      width: 1120px;
+      height: 410px;
+      pointer-events: none;
+    }
+
+    /* Sun reflection path on lake */
+    .sun-shimmer {
+      position: absolute;
+      left: 50%;
+      top: 472px;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 420px;
+      background: radial-gradient(ellipse at 50% 10%, rgba(255, 244, 210, 0.52), rgba(255, 244, 210, 0.08) 55%, transparent 80%);
+      filter: blur(8px);
+      pointer-events: none;
+    }
+
+    /* Subtle Left-Side Windows Desktop Icons (kept low contrast so foreground UI pops) */
+    .desktop-icons {
+      position: absolute;
+      left: 24px;
+      top: 22px;
+      display: grid;
+      grid-template-columns: repeat(4, 78px);
+      gap: 14px 12px;
+      opacity: 0.86;
+      pointer-events: none;
+    }
+
+    .d-icon {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      text-align: center;
+    }
+
+    .d-glyph {
+      width: 38px;
+      height: 32px;
+      border-radius: 5px;
+      background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 100%);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+      position: relative;
+    }
+
+    .d-glyph::before {
+      content: "";
+      position: absolute;
+      top: -4px;
+      left: 2px;
+      width: 15px;
+      height: 6px;
+      border-radius: 3px 3px 0 0;
+      background: #fbbf24;
+    }
+
+    .d-glyph.app {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #0d9488, #0f172a);
+      border: 1.5px solid #2dd4bf;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #5eead4;
+      font-weight: 800;
+      font-size: 14px;
+    }
+
+    .d-glyph.app::before { display: none; }
+
+    .d-lbl {
+      font-size: 11px;
+      color: #ffffff;
+      text-shadow: 0 1px 4px rgba(0, 0, 0, 0.78);
+      line-height: 1.15;
+    }
+
+    /* Floating SmartPoli Companion Popover (matches CareCompanion UI) */
+    #companionWindow {
+      position: absolute;
+      left: 790px;
+      top: 108px;
+      width: 540px;
+      border-radius: 16px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 28px 75px rgba(4, 10, 14, 0.62), 0 0 0 1px rgba(45, 212, 191, 0.12);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 15;
+    }
+
+    body[data-step="0"] #companionWindow {
+      display: none;
+    }
+
+    .comp-head {
+      padding: 16px 18px 12px;
+      background: var(--bg);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+    }
+
+    .comp-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.015em;
+    }
+
+    .comp-sub {
+      font-size: 13px;
+      color: #34d399;
+      margin-top: 3px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .comp-sub-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+    }
+
+    body[data-step="3"] .comp-sub {
+      color: #fca5a5;
+    }
+
+    body[data-step="3"] .comp-sub-dot {
+      background: #f87171;
+    }
+
+    .head-tools {
+      display: flex;
+      gap: 6px;
+    }
+
+    .tool-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    /* Tabs Row */
+    .comp-tabs {
+      padding: 0 18px 10px;
+      display: flex;
+      gap: 7px;
+    }
+
+    .c-tab {
+      padding: 7px 14px;
+      border-radius: 8px;
+      background: var(--card);
+      color: #cbd5e1;
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+
+    .c-tab.active {
+      background: var(--accent);
+      color: #ffffff;
+    }
+
+    /* Due Medication Amber Strip */
+    .due-strip {
+      margin: 0 18px 10px;
+      padding: 8px 11px;
+      border-radius: 9px;
+      background: var(--warn-bg);
+      border: 1px solid rgba(251, 191, 36, 0.28);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .due-text {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--warn-fg);
+    }
+
+    .due-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .d-btn {
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .d-btn.missed { background: #6b2226; color: #fecaca; }
+    .d-btn.snooze { background: #1e3a4c; color: #cbd5e1; }
+    .d-btn.taken  { background: #065f46; color: #a7f3d0; }
+
+    /* Conversation Feed */
+    #log {
+      margin: 0 18px;
+      padding: 14px 14px;
+      height: 360px;
+      border-radius: 12px;
+      background: #0a1419;
+      border: 1px solid rgba(34, 66, 79, 0.72);
+      display: flex;
+      flex-direction: column;
+      gap: 11px;
+      overflow: hidden;
+    }
+
+    .c-msg {
+      padding: 11px 14px;
+      border-radius: 10px;
+      font-size: 14.5px;
+      line-height: 1.44;
+    }
+
+    .c-msg.bot {
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      color: #e2e8f0;
+      align-self: flex-start;
+      max-width: 94%;
+    }
+
+    .c-msg.user {
+      background: #0d9488;
+      color: #ffffff;
+      align-self: flex-end;
+      max-width: 90%;
+      box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28);
+    }
+
+    .c-msg.bot strong.prefix {
+      color: #5eead4;
+      margin-right: 4px;
+    }
+
+    .c-msg.user strong.prefix {
+      color: #ccfbf1;
+      margin-right: 4px;
+    }
+
+    .call-card {
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(19, 39, 46, 0.96));
+      border: 1.5px solid rgba(45, 212, 191, 0.65);
+      color: #ecfeff;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .call-card-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #5eead4;
+    }
+
+    .call-card-body {
+      font-size: 14px;
+      line-height: 1.42;
+      color: #f0fdfa;
+    }
+
+    .call-card-foot {
+      font-family: ui-monospace, Consolas, monospace;
+      font-size: 11.5px;
+      color: #a7f3d0;
+      padding-top: 5px;
+      border-top: 1px solid rgba(45, 212, 191, 0.22);
+    }
+
+    /* Quick Chips */
+    .comp-chips {
+      padding: 12px 18px 8px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .q-chip {
+      padding: 6px 13px;
+      border-radius: 8px;
+      background: var(--card);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .q-chip.active {
+      background: rgba(248, 113, 113, 0.20);
+      border-color: rgba(248, 113, 113, 0.65);
+      color: #fecaca;
+      font-weight: 700;
+    }
+
+    /* Composer Row */
+    .comp-composer {
+      padding: 6px 18px 16px;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .mic-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 9px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: #cbd5e1;
+      flex: none;
+    }
+
+    .mic-btn.listening {
+      background: rgba(16, 185, 129, 0.22);
+      border-color: #10b981;
+      color: #6ee7b7;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+    }
+
+    .msg-input {
+      flex: 1;
+      height: 40px;
+      border-radius: 9px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      padding: 0 13px;
+      display: flex;
+      align-items: center;
+      font-size: 13.5px;
+      color: #94a3b8;
+    }
+
+    .msg-input.filled {
+      color: #f0fdfa;
+    }
+
+    .send-btn {
+      height: 40px;
+      padding: 0 20px;
+      border-radius: 9px;
+      background: var(--accent);
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex: none;
+    }
+
+    /* Hovering Robot Avatar at Bottom Right (faithful replica of uploaded avatar PNG) */
+    .avatar-dock {
+      position: absolute;
+      right: 92px;
+      bottom: 88px;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 12px;
+      z-index: 20;
+    }
+
+    .avatar-callout {
+      padding: 11px 16px;
+      border-radius: 12px;
+      background: rgba(13, 23, 28, 0.94);
+      border: 1.5px solid rgba(251, 191, 36, 0.65);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+      color: #f8fafc;
+      font-size: 14.5px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      white-space: nowrap;
+    }
+
+    .callout-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 10px #fbbf24;
+    }
+
+    #hoverAvatarBtn {
+      position: relative;
+      width: 126px;
+      height: 126px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.48));
+    }
+
+    .avatar-ring {
+      position: absolute;
+      inset: -10px;
+      border-radius: 50%;
+      border: 2px solid rgba(45, 212, 191, 0.45);
+      background: radial-gradient(circle, rgba(45, 212, 191, 0.14), transparent 70%);
+    }
+
+    /* Windows 11 Translucent Bottom Taskbar */
+    .taskbar {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 46px;
+      background: rgba(18, 25, 32, 0.86);
+      backdrop-filter: blur(18px);
+      border-top: 1px solid rgba(255, 255, 255, 0.10);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 25;
+    }
+
+    .tb-center {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin: 0 auto;
+    }
+
+    .tb-app {
+      width: 30px;
+      height: 30px;
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+    }
+
+    .tb-app.win {
+      background: linear-gradient(135deg, #38bdf8, #0284c7);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .tb-app.search {
+      width: 180px;
+      border-radius: 99px;
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.10);
+      color: #cbd5e1;
+      font-size: 12px;
+      justify-content: flex-start;
+      padding: 0 12px;
+    }
+
+    .tb-app.sp {
+      background: linear-gradient(135deg, #10b981, #0f172a);
+      border: 1px solid #2dd4bf;
+      color: #5eead4;
+      font-weight: 800;
+      position: relative;
+    }
+
+    .tb-app.sp::after {
+      content: "";
+      position: absolute;
+      bottom: -5px;
+      width: 12px;
+      height: 3px;
+      border-radius: 99px;
+      background: #2dd4bf;
+    }
+
+    .tb-app.wa {
+      background: #16a34a;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .tb-app.pl {
+      background: #0284c7;
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .tb-tray {
+      font-size: 12px;
+      color: #e2e8f0;
+      text-align: right;
+      line-height: 1.2;
+    }
+
+    /* Step visibility helpers */
+    body:not([data-step="0"]) .step0-only { display: none; }
+    body[data-step="1"] .step2-only,
+    body[data-step="1"] .step3-only { display: none; }
+    body[data-step="2"] .step1-only,
+    body[data-step="2"] .step3-only { display: none; }
+    body[data-step="3"] .step1-only,
+    body[data-step="3"] .step2-only { display: none; }
+  </style>
+</head>
+<body data-step="0">
+  <div class="desktop">
+    <!-- Far Coastal Mountains & Foreground Grassy Bank -->
+    <svg class="horizon-hills" viewBox="0 0 1600 150" preserveAspectRatio="none">
+      <path d="M0 118 Q180 42 420 92 T920 108 T1360 95 L1600 112 L1600 150 L0 150 Z" fill="rgba(78, 114, 134, 0.36)" />
+      <path d="M0 132 Q240 88 520 120 T1180 126 L1600 105 L1600 150 L0 150 Z" fill="rgba(52, 88, 108, 0.34)" />
+    </svg>
+
+    <div class="sun-shimmer"></div>
+
+    <svg class="grass-bank" viewBox="0 0 1120 410" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="reeds" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#c9b484" />
+          <stop offset="100%" stop-color="#8b7444" />
+        </linearGradient>
+        <linearGradient id="lawn" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#5d8b35" />
+          <stop offset="100%" stop-color="#2f5219" />
+        </linearGradient>
+      </defs>
+      <path d="M220 265 Q560 150 1120 110 L1120 310 L260 320 Z" fill="url(#reeds)" opacity="0.92" />
+      <path d="M0 320 Q420 250 1120 205 L1120 410 L0 410 Z" fill="url(#lawn)" />
+    </svg>
+
+    <!-- Subtle Left-Side Desktop Icons (matches user's Windows layout) -->
+    <div class="desktop-icons" aria-hidden="true">
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">SmartPoli</span></div>
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">Voice Agent</span></div>
+      <div class="d-icon"><div class="d-glyph app">SP</div><span class="d-lbl">Companion</span></div>
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">Meds Docs</span></div>
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">Twilio</span></div>
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">Caregiver</span></div>
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">Reports</span></div>
+      <div class="d-icon"><div class="d-glyph"></div><span class="d-lbl">Desktop</span></div>
+    </div>
+
+    <!-- Floating SmartPoli Companion Popover (matches uploaded screenshots 1 & 3) -->
+    <section id="companionWindow">
+      <header class="comp-head">
+        <div>
+          <div class="comp-title">SmartPoli Companion</div>
+          <div class="comp-sub">
+            <span class="comp-sub-dot"></span>
+            <span id="compStatusText">Groq · reminder</span>
+          </div>
+        </div>
+        <div class="head-tools" aria-hidden="true">
+          <div class="tool-btn">🔊</div>
+          <div class="tool-btn">☀</div>
+          <div class="tool-btn">—</div>
+        </div>
+      </header>
+
+      <nav class="comp-tabs">
+        <div class="c-tab active">Chat</div>
+        <div class="c-tab">Meds</div>
+        <div class="c-tab">Help</div>
+        <div class="c-tab">Caregiver</div>
+        <div class="c-tab">Log</div>
+      </nav>
+
+      <div class="due-strip">
+        <div class="due-text">💊 Due: Examplol (08:00) (+1)</div>
+        <div class="due-actions">
+          <span class="d-btn missed">Missed</span>
+          <span class="d-btn snooze">10m</span>
+          <span class="d-btn taken">✓ Taken</span>
+        </div>
+      </div>
+
+      <div id="log">
+        <!-- Step 1: Welcome + Reminder inside hovering companion -->
+        <div class="c-msg bot step1-only">
+          <strong class="prefix">SmartPoli:</strong>Hi Alex! Next: Examplol at 08:00. How can I help?
+        </div>
+        <div class="c-msg bot step1-only">
+          <strong class="prefix">SmartPoli:</strong>Reminder: time for Examplol (10 mg tablet, 08:00). Touch the mic or ask a question anytime!
+        </div>
+
+        <!-- Step 2: Touch & Talk grounded KB Q&A inside hovering companion -->
+        <div class="c-msg user step2-only">
+          <strong class="prefix">You (🎤 Talk):</strong>"How late can my Examplol reminder arrive, and should I double my dose if I missed 08:00?"
+        </div>
+        <div id="lastBotMsg" class="c-msg bot step2-only">
+          <strong class="prefix">SmartPoli:</strong>Reminders can arrive up to 5 minutes late. I can't advise on doubling any dose—please check with your pharmacist or care team.
+        </div>
+
+        <!-- Step 3: Tap Unwell -> Trigger Live Care Call to Phone Link -->
+        <div class="c-msg user step3-only">
+          <strong class="prefix">You (🎤 Talk):</strong>"I'm feeling unwell — can you call my phone and walk me through checking my blood pressure?"
+        </div>
+        <div id="callTriggerCard" class="call-card step3-only">
+          <div class="call-card-head">
+            <span>📞 Outbound Care Call Initiated</span>
+            <span>+1 (737) 250-8034</span>
+          </div>
+          <div class="call-card-body">
+            Calling your phone <strong>(+91 73073 60971)</strong> right now via SmartPoli Voice Triage. Answer the incoming call on <strong>Windows Phone Link</strong>!
+          </div>
+          <div class="call-card-foot">
+            📲 Ringing Alex's Phone · Caregiver Rohan (demo son) notified on standby
+          </div>
+        </div>
+      </div>
+
+      <div class="comp-chips">
+        <span class="q-chip">Next med</span>
+        <span class="q-chip">Inhaler</span>
+        <span class="q-chip">Sleep</span>
+        <span id="unwellChip" class="q-chip">Unwell</span>
+      </div>
+
+      <div class="comp-composer">
+        <div id="micBtn" class="mic-btn">🎤</div>
+        <div id="msgInput" class="msg-input">Ask or tap mic to speak...</div>
+        <div id="sendBtn" class="send-btn">Send</div>
+      </div>
+    </section>
+
+    <!-- Hovering Desktop Robot Avatar (bottom-right) -->
+    <div class="avatar-dock">
+      <div class="avatar-callout step0-only">
+        <span class="callout-dot"></span>
+        <span>💊 Examplol (08:00) Due — Touch Avatar to Talk</span>
+      </div>
+
+      <div id="hoverAvatarBtn">
+        <div class="avatar-ring"></div>
+        <svg width="118" height="118" viewBox="0 0 120 120" fill="none">
+          <!-- Soft shadow under hovering robot -->
+          <ellipse cx="60" cy="109" rx="30" ry="6" fill="rgba(5, 10, 12, 0.72)"/>
+          <!-- Antenna stem & ball -->
+          <rect x="57" y="13" width="6" height="12" rx="3" fill="#e2f8f5" stroke="#0b1f24" stroke-width="2.5"/>
+          <circle cx="60" cy="11" r="7" fill="#2dd4bf" stroke="#0b1f24" stroke-width="2.5"/>
+          <!-- Side headphones / ear pods -->
+          <rect x="11" y="45" width="12" height="28" rx="6" fill="#0d9488" stroke="#0b1f24" stroke-width="2.5"/>
+          <rect x="97" y="45" width="12" height="28" rx="6" fill="#0d9488" stroke="#0b1f24" stroke-width="2.5"/>
+          <!-- Outer rounded teal head shell -->
+          <rect x="20" y="24" width="80" height="72" rx="28" fill="#5eead4" stroke="#0b1f24" stroke-width="3"/>
+          <!-- Top forehead highlight dot -->
+          <circle cx="60" cy="27" r="3" fill="#ffffff"/>
+          <!-- Inner dark visor screen -->
+          <rect x="30" y="34" width="60" height="52" rx="18" fill="#0f2329" stroke="#0d9488" stroke-width="2"/>
+          <!-- Glowing amber eyes -->
+          <circle cx="47" cy="54" r="6.2" fill="#fbbf24"/>
+          <circle cx="73" cy="54" r="6.2" fill="#fbbf24"/>
+          <!-- Warm amber smile -->
+          <path d="M49 69 Q60 77 71 69" stroke="#fbbf24" stroke-width="4.2" stroke-linecap="round" fill="none"/>
+          <!-- Yellow ! Notification Badge (top-right) -->
+          <circle cx="94" cy="28" r="14" fill="#fbbf24" stroke="#0b1f24" stroke-width="2.5"/>
+          <path d="M94 21V29" stroke="#0b1f24" stroke-width="3.2" stroke-linecap="round"/>
+          <circle cx="94" cy="34" r="2" fill="#0b1f24"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Windows 11 Taskbar -->
+    <footer class="taskbar" aria-hidden="true">
+      <div style="font-size:12px;color:#cbd5e1;">☀ 22°C Clear</div>
+      <div class="tb-center">
+        <div class="tb-app win">⊞</div>
+        <div class="tb-app search">🔍 Search</div>
+        <div class="tb-app sp">SP</div>
+        <div class="tb-app pl">📞</div>
+        <div class="tb-app wa">💬</div>
+      </div>
+      <div class="tb-tray">
+        <div>12:14 PM</div>
+        <div style="font-size:11px;color:#94a3b8;">14-11-2026</div>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    function applyStep(step) {
+      const s = String(step || "0");
+      document.body.setAttribute("data-step", s);
+      const status = document.getElementById("compStatusText");
+      const mic = document.getElementById("micBtn");
+      const inp = document.getElementById("msgInput");
+      const chip = document.getElementById("unwellChip");
+
+      if (s === "1") {
+        status.textContent = "Groq · reminder";
+        mic.className = "mic-btn listening";
+        inp.textContent = "Tap mic & ask about reminders or doses...";
+      } else if (s === "2") {
+        status.textContent = "Groq · helpful · grounded KB";
+        mic.className = "mic-btn listening";
+        inp.textContent = "How late can my Examplol reminder arrive...?";
+        inp.className = "msg-input filled";
+      } else if (s === "3") {
+        status.textContent = "Groq · escalating · calling +91 73073 60971";
+        mic.className = "mic-btn listening";
+        chip.className = "q-chip active";
+        inp.textContent = "Calling your phone via Windows Phone Link...";
+        inp.className = "msg-input filled";
+      }
+    }
+    const params = new URLSearchParams(window.location.search);
+    applyStep(params.get("step") || "0");
+    window.setCompanionStep = applyStep;
+  </script>
+</body>
+</html>

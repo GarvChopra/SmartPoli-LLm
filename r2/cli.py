@@ -364,9 +364,11 @@ def cmd_serve(settings: Settings) -> int:
         print(f"Refusing to listen on {settings.host}: R2 must listen on localhost only "
               "(set R2_PROFILE=demo for the hosted demo, or R2_ALLOW_LAN=1 to override).")
         return 2
+    host = "0.0.0.0" if (settings.profile == "demo" and os.environ.get("PORT")) else settings.host
+    port = int(os.environ["PORT"]) if (settings.profile == "demo" and os.environ.get("PORT")) else settings.port
     rt = build_runtime(settings)
     try:
-        uvicorn.run(create_app(rt), host=settings.host, port=settings.port)
+        uvicorn.run(create_app(rt), host=host, port=port)
     finally:
         rt.registry.close()
     return 0
